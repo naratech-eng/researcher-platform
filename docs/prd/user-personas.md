@@ -30,6 +30,11 @@ graph TD
 ```mermaid
 ```
 
+```mermaid fullWidth="false"
+graph TD
+  Mermaid --> Diagram
+```
+
 ## Farmer Persona
 
 ### Profile: Maria Rodriguez
