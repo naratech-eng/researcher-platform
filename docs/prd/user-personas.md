@@ -27,6 +27,9 @@ graph TD
     style E fill:#ffd,stroke:#333,stroke-width:1px
 ```
 
+```mermaid
+```
+
 ## Farmer Persona
 
 ### Profile: Maria Rodriguez
