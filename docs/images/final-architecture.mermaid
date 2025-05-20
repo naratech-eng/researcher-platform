@@ -1,0 +1,125 @@
+flowchart TD
+    %% User Interaction
+    User((User fa:fa-user)) <--> Frontend
+
+    %% Frontend
+    subgraph Frontend_AWS["Frontend (AWS Amplify)"]
+        Frontend[React/Next.js Application fa:fa-react]
+    end
+    
+    %% API Gateways
+    Frontend <--> UAPI[User API Gateway fa:fa-network-wired]
+    Frontend <--> RAPI[Research API Gateway fa:fa-network-wired]
+    
+    %% Backend Services
+    subgraph UserBackend["User Backend (EC2 - Bun.js)"]
+        UAPI --> AuthService[Authentication Service fa:fa-key]
+        UAPI --> UserService[User Management fa:fa-users]
+        UAPI --> SessionService[Session Management fa:fa-clock]
+        UAPI --> EmiliaService[Emilia AI Orchestrator fa:fa-robot]
+    end
+    
+    subgraph ResearchBackend["Research Backend (EC2 - FastAPI)"]
+        RAPI --> FarmerService[Farmer Data Service fa:fa-leaf]
+        RAPI --> BreedingService[Breeding Engine fa:fa-dna]
+        RAPI --> ResearchService[Research Data Service fa:fa-flask]
+        RAPI --> AnalyticsService[Analytics Service fa:fa-chart-line]
+    end
+    
+    %% Researcher Environment
+    subgraph ResearcherEnv["Researcher Environment"]
+        RAPI --> RStudioEC2[RStudio Server EC2 fa:fa-chart-bar]
+        RAPI --> JupyterEC2[JupyterHub EC2 fa:fa-code]
+        
+        RStudioEC2 --> WorkspaceManager[Workspace Manager fa:fa-folder]
+        JupyterEC2 --> WorkspaceManager
+        
+        WorkspaceManager --> AutosaveService[Autosave Service fa:fa-save]
+    end
+    
+    %% Emilia AI Components - Separate EC2
+    subgraph EmiliaEC2["Emilia AI (EC2)"]
+        EmiliaService --> AppServer[Application Server fa:fa-server]
+        AppServer --> LLMService[LLM Service fa:fa-brain]
+        AppServer --> SearchService[Search Service fa:fa-search]
+        
+        %% LLM Integration
+        LLMService --> Perplexity[Perplexity fa:fa-comment-dots]
+        LLMService --> LlamaMaverick[Llama Maverick fa:fa-comment-dots]
+        
+        %% Knowledge Base
+        SearchService --> KnowledgeBase[Knowledge Base fa:fa-database]
+        KnowledgeBase --> ChromaDB[ChromaDB fa:fa-layer-group]
+        KnowledgeBase --> DirectDB[Direct DB Access fa:fa-plug]
+        KnowledgeBase --> JournalAPI[Journal APIs fa:fa-book]
+    end
+    
+    %% Storage Services
+    WorkspaceManager --- UserDDB[(DynamoDB\nUser Data & Workspace Metadata fa:fa-table)]
+    AutosaveService --- UserContentS3[(S3 Bucket\nUser Uploads & Workspaces fa:fa-file-archive)]
+    
+    %% Other Databases
+    AuthService --> UserDDB
+    UserService --> UserDDB
+    SessionService --> UserDDB
+    EmiliaService --> UserDDB
+    
+    FarmerService --> PostgreSQL[(PostgreSQL RDS\nResearch Data fa:fa-database)]
+    BreedingService --> PostgreSQL
+    ResearchService --> PostgreSQL
+    AnalyticsService --> PostgreSQL
+    
+    DirectDB --> PostgreSQL
+    ChromaDB --> VectorDB[(Vector Database\nScientific Literature fa:fa-bookmark)]
+    
+    %% Data Flow for Researcher Environment
+    User -- "Uploads Data" --> Frontend
+    Frontend -- "Stores Files" --> UserContentS3
+    RStudioEC2 -- "Access Files" --> UserContentS3
+    JupyterEC2 -- "Access Files" --> UserContentS3
+    AutosaveService -- "Periodic Save" --> UserContentS3
+    
+    %% Authentication Methods
+    subgraph AuthMethods["Authentication Methods"]
+        AuthService --> OAuth[OAuth 2.0 fa:fa-sign-in-alt]
+        AuthService --> DID[DID Protocol fa:fa-fingerprint]
+        AuthService --> Web3[Web3/MetaMask fa:fa-wallet]
+    end
+    
+    %% User Roles Access
+    subgraph UserRoles["User Roles (RBAC)"]
+        UserService --> FarmerRole[Farmer fa:fa-tractor]
+        UserService --> ResearcherRole[Researcher fa:fa-microscope]
+        UserService --> StudentRole[Student fa:fa-graduation-cap]
+        UserService --> AdminRole[Admin fa:fa-user-cog]
+    end
+    
+    %% Role Access Paths
+    ResearcherRole -.-> RStudioEC2
+    ResearcherRole -.-> JupyterEC2
+    StudentRole -.-> RStudioEC2
+    StudentRole -.-> JupyterEC2
+    
+    %% Admin Management
+    AdminRole --> UserRegistration[User Registration fa:fa-user-plus]
+    AdminRole --> RoleManagement[Role Management fa:fa-user-tag]
+    AdminRole --> AccessControl[Access Control fa:fa-lock]
+    
+    %% Styling
+    classDef frontend fill:#f9f,stroke:#333,stroke-width:1px
+    classDef backend fill:#bbf,stroke:#333,stroke-width:1px
+    classDef db fill:#bfb,stroke:#333,stroke-width:1px
+    classDef ai fill:#fbb,stroke:#333,stroke-width:1px
+    classDef auth fill:#ffd,stroke:#333,stroke-width:1px
+    classDef role fill:#dff,stroke:#333,stroke-width:1px
+    classDef research fill:#e9d5ff,stroke:#333,stroke-width:1px
+    classDef storage fill:#d1fae5,stroke:#333,stroke-width:1px
+    
+    class Frontend frontend
+    class AuthService,UserService,SessionService,EmiliaService,FarmerService,BreedingService,ResearchService,AnalyticsService backend
+    class UserDDB,PostgreSQL,VectorDB db
+    class AppServer,LLMService,SearchService,KnowledgeBase,ChromaDB,DirectDB,JournalAPI,Perplexity,LlamaMaverick ai
+    class OAuth,DID,Web3,AuthService auth
+    class FarmerRole,ResearcherRole,StudentRole,AdminRole,UserRegistration,RoleManagement,AccessControl role
+    class RStudioEC2,JupyterEC2,WorkspaceManager,AutosaveService research
+    class UserContentS3 storage

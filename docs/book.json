@@ -1,0 +1,28 @@
+{
+  "title": "Agricultural Research Platform Documentation",
+  "description": "Comprehensive documentation for the Agricultural Research Platform with Emilia AI integration",
+  "author": "Naratech",
+  "language": "en",
+  "gitbook": "3.2.3",
+  "plugins": [
+    "theme-default",
+    "-lunr",
+    "-search",
+    "search-plus",
+    "-sharing",
+    "-highlight",
+    "prism",
+    "-fontsettings",
+    "-livereload"
+  ],
+  "pluginsConfig": {
+    "prism": {
+      "css": [
+        "prismjs/themes/prism-tomorrow.css"
+      ]
+    },
+    "theme-default": {
+      "showLevel": true
+    }
+  }
+}
