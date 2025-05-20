@@ -14,7 +14,7 @@
     "prism",
     "-fontsettings",
     "-livereload",
-    "-mermaid"
+    "mermaid-gb3"
   ],
   "pluginsConfig": {
     "prism": {
@@ -22,7 +22,7 @@
         "prismjs/themes/prism-tomorrow.css"
       ]
     },
-    "mermaid": {
+    "mermaid-gb3": {
       "theme": "default"
     },
     "theme-default": {
