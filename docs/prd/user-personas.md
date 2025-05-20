@@ -27,12 +27,23 @@ graph TD
     style E fill:#ffd,stroke:#333,stroke-width:1px
 ```
 
-```mermaid
-```
-
 ```mermaid fullWidth="false"
 graph TD
-  Mermaid --> Diagram
+    A[Agricultural Research Platform] --> B[Farmer]
+    A --> C[Researcher]
+    A --> D[Student]
+    A --> E[Administrator]
+    
+    B --> B1[Goals: Practical insights, Yield improvement, Simplified research access]
+    C --> C1[Goals: Data analysis, Breeding experiments, Knowledge dissemination]
+    D --> D1[Goals: Learning, Research participation, Skill development]
+    E --> E1[Goals: System management, User administration, Performance monitoring]
+    
+    style A fill:#f9f,stroke:#333,stroke-width:2px
+    style B fill:#bbf,stroke:#333,stroke-width:1px
+    style C fill:#bfb,stroke:#333,stroke-width:1px
+    style D fill:#fbb,stroke:#333,stroke-width:1px
+    style E fill:#ffd,stroke:#333,stroke-width:1px
 ```
 
 ## Farmer Persona
