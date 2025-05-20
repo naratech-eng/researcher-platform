@@ -21,6 +21,9 @@
         "prismjs/themes/prism-tomorrow.css"
       ]
     },
+    "mermaid-gb3": {
+      "theme": "default"
+    },
     "theme-default": {
       "showLevel": true
     }
