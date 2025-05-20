@@ -14,7 +14,7 @@
     "prism",
     "-fontsettings",
     "-livereload",
-    "mermaid"
+    "-mermaid"
   ],
   "pluginsConfig": {
     "prism": {
