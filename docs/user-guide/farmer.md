@@ -1,465 +1,278 @@
 # Farmer Guide
 
-## Introduction
+## Introduction to the Farmer Interface
 
-Welcome to the Farmer's Guide for the Agricultural Research Platform. This guide is designed to help you leverage the platform's capabilities to improve your farming operations, gain insights from agricultural research, and participate in breeding programs.
+Welcome to the Animal Genetics Research Platform's Farmer Interface. This guide provides comprehensive information on how to use the platform to improve your livestock breeding program, track animal performance, and benefit from cutting-edge genetic research.
 
-As a farmer, the platform provides you with tools to:
-- Access simplified insights from research findings relevant to your crops
-- Track and analyze performance of your agricultural operations
-- Receive actionable recommendations for improving yields and sustainability
-- Participate in breeding programs with research institutions
-- Contribute valuable field data to the research community
+## Getting Started as a Farmer
 
-## Farmer Dashboard Overview
+### Setting Up Your Farm Profile
 
-Your personalized dashboard is the central hub for accessing all farmer-specific features and information.
+1. Complete your farm profile with:
+   - Farm location and environment details
+   - Livestock breeds and flock size
+   - Production system information
+   - Breeding objectives and goals
 
-```mermaid
-graph TD
-    A[Farmer Dashboard] --> B[Crop Performance]
-    A --> C[Weather Insights]
-    A --> D[Research Highlights]
-    A --> E[Breeding Programs]
-    A --> F[Field Data Collection]
-    
-    B --> B1[Yield Trends]
-    B --> B2[Regional Comparisons]
-    B --> B3[Performance Analytics]
-    
-    C --> C1[Forecasts]
-    C --> C2[Historical Data]
-    C --> C3[Climate Patterns]
-    
-    D --> D1[Latest Findings]
-    D --> D2[Practical Applications]
-    D --> D3[Recommended Practices]
-    
-    E --> E1[Active Programs]
-    E --> E2[Variety Testing]
-    E --> E3[Results & Feedback]
-    
-    F --> F1[Data Entry Forms]
-    F --> F2[Mobile Collection]
-    F --> F3[Data Visualization]
-    
-    style A fill:#f9f,stroke:#333,stroke-width:2px
-    style B,C,D,E,F fill:#bbf,stroke:#333,stroke-width:1px
-```
+2. Configure your notification preferences for:
+   - Breeding recommendations
+   - Research findings relevant to your operation
+   - Collaboration opportunities with researchers
+   - System updates and new features
 
-### Accessing Your Dashboard
+### Navigating the Farmer Dashboard
 
-1. Log in to the Agricultural Research Platform
-2. The Farmer Dashboard will appear as your home page
-3. Customize your dashboard by clicking the "Customize" button in the top right corner
-4. Drag and drop widgets to rearrange them based on your priorities
-5. Click "Save Layout" to preserve your customizations
+Your personalized dashboard provides:
 
-## Farmer Insights Dashboard
+- Key performance indicators for your livestock
+- Breeding recommendations based on your goals
+- Upcoming breeding events and deadlines
+- Recent research findings relevant to your operation
+- Quick access to data entry and analysis tools
 
-The Insights Dashboard provides data-driven analytics about your farm operations and relevant research findings.
+## Animal Data Management
 
-### Key Features
+### Recording Animal Information
 
-#### Crop Performance Analytics
+Efficiently track your livestock data:
 
-The Crop Performance section allows you to:
-
-1. **View Historical Yields**
-   - Track yields across multiple seasons
-   - Compare performance across different fields
-   - Identify trends and patterns
-
-2. **Regional Benchmarking**
-   - Compare your yields with regional averages
-   - See how your practices compare to similar farms
-   - Identify opportunities for improvement
-
-3. **Input Efficiency Analysis**
-   - Track input costs against yields
-   - Analyze return on investment for different practices
-   - Optimize resource allocation
-
-#### Using the Analytics Tools
-
-```mermaid
-sequenceDiagram
-    participant Farmer
-    participant Dashboard
-    participant DataVisualizer
-    participant DataStore
-    
-    Farmer->>Dashboard: Select crop type
-    Dashboard->>DataStore: Request crop data
-    DataStore->>Dashboard: Return historical data
-    Dashboard->>Farmer: Display crop selection
-    
-    Farmer->>Dashboard: Select date range
-    Dashboard->>DataStore: Request filtered data
-    DataStore->>Dashboard: Return filtered data
-    
-    Farmer->>Dashboard: Choose visualization type
-    Dashboard->>DataVisualizer: Generate visualization
-    DataVisualizer->>Dashboard: Return visualization
-    Dashboard->>Farmer: Display results
-    
-    Farmer->>Dashboard: Request benchmark comparison
-    Dashboard->>DataStore: Fetch regional data
-    DataStore->>Dashboard: Return benchmark data
-    Dashboard->>DataVisualizer: Generate comparison
-    DataVisualizer->>Dashboard: Return comparison view
-    Dashboard->>Farmer: Display comparison
-```
-
-**Step-by-Step Guide:**
-
-1. From your dashboard, click on "Crop Performance Analytics"
-2. Select the crop type you want to analyze from the dropdown menu
-3. Choose the date range for analysis using the calendar selector
-4. Select fields to include in the analysis by checking the appropriate boxes
-5. Choose visualization type (bar chart, line graph, heat map, etc.)
-6. Toggle the "Regional Benchmark" option to compare with regional data
-7. Use the filter options to refine your analysis by variables such as:
-   - Soil type
-   - Weather conditions
-   - Farming practices
-   - Input variables
-8. Export your analysis as PDF, CSV, or share directly with your advisors
-
-### Research Insights
-
-The Research Insights section translates complex research findings into practical recommendations for your farm.
-
-#### Accessing Research Insights
-
-1. Click on the "Research Insights" tab in your dashboard
-2. Filter insights by:
-   - Crop type
-   - Farming practice
-   - Climate zone
-   - Problem area (pest management, soil health, etc.)
-3. Browse through simplified research summaries
-4. Click "Learn More" on any insight to see detailed information including:
-   - Practical applications
-   - Implementation steps
-   - Expected outcomes
-   - Source research
-
-#### Example: Interpreting Research Findings
-
-![Research Insight Example](../assets/images/farmer-research-insight.png)
-
-Each research insight includes:
-- Plain language summary of findings
-- Practical implementation steps
-- Expected benefits and potential challenges
-- Confidence level based on research strength
-- Source citations for further reading
-
-### Seasonal Recommendations
-
-The platform provides season-specific recommendations based on your location, crops, and historical data.
-
-#### How to Use Seasonal Recommendations
-
-1. Recommendations appear automatically on your dashboard based on the current season
-2. Click on any recommendation to see detailed implementation guidance
-3. Use the calendar view to see upcoming recommendations for future planning
-4. Mark recommendations as "Implemented" to track your adoption
-5. Provide feedback on recommendations to improve future suggestions
-
-## Data Entry and Collection
-
-The platform provides multiple ways to record and manage your farm data, designed to fit your workflow whether you're in the office or in the field.
+1. Navigate to "Animals" in the main menu
+2. Select "Add New Animal" or "Batch Import"
+3. Record essential information:
+   - Animal identification (tags, electronic IDs)
+   - Birth date and parentage
+   - Breed composition
+   - Initial measurements and observations
 
 ### Mobile Data Collection
 
-```mermaid
-graph TD
-    A[Mobile Data Collection] --> B[Field Observations]
-    A --> C[Crop Measurements]
-    A --> D[Photo Documentation]
-    A --> E[Voice Notes]
-    
-    B --> B1[Plant Health]
-    B --> B2[Pest Presence]
-    B --> B3[Growth Stages]
-    
-    C --> C1[Yield Sampling]
-    C --> C2[Plant Dimensions]
-    C --> C3[Quality Metrics]
-    
-    D --> D1[Plant Images]
-    D --> D2[Field Conditions]
-    D --> D3[Problem Areas]
-    
-    E --> E1[Voice-to-Text Notes]
-    E --> E2[Audio Recordings]
-    
-    style A fill:#f9f,stroke:#333,stroke-width:2px
-    style B,C,D,E fill:#bbf,stroke:#333,stroke-width:1px
-```
+Collect data in the field using the mobile interface:
 
-#### Using the Mobile App
+1. Download the mobile app or access the mobile web version
+2. Use offline mode when working in areas with poor connectivity
+3. Scan electronic IDs or enter tag numbers
+4. Record weights, health observations, or breeding events
+5. Sync data when connectivity is available
 
-1. Download the Agricultural Research Platform mobile app from the App Store or Google Play
-2. Log in with your platform credentials
-3. Tap "Collect Data" from the main menu
-4. Select the data collection template appropriate for your task:
-   - Field observations
-   - Crop measurements
-   - Harvest data
-   - Input applications
-5. Use your device's GPS to tag the location automatically
-6. Fill in the required fields
-7. Take photos to document observations when needed
-8. Record voice notes for additional context
-9. Save data (will be stored locally if offline)
-10. Sync when connected to the internet
+### Importing Existing Records
 
-#### Offline Functionality
+Transfer data from other systems:
 
-The mobile app works without an internet connection:
-- All forms and templates are available offline
-- Data is stored securely on your device
-- Photos and voice notes are compressed for efficient storage
-- Automatic synchronization when connectivity is restored
-- Conflict resolution if data was updated in multiple places
+1. Navigate to "Data Management" in the main menu
+2. Select "Import Data"
+3. Choose from supported file formats or systems
+4. Map your data fields to platform standards
+5. Review and confirm the import
 
-### Web-Based Data Entry
+## Performance Tracking
 
-For more extensive data entry, the web interface provides comprehensive forms and data management tools.
+### Weight and Growth Monitoring
 
-#### Importing Data from Farm Management Software
+Track animal development over time:
 
-The platform supports data import from common farm management systems:
-1. Navigate to "Data Management" > "Import Data"
-2. Select your farm management software from the list
-3. Choose the data type to import (field records, input applications, yield data, etc.)
-4. Follow the connection instructions for your specific software
-5. Review the mapped data before confirming import
-6. Resolve any data conflicts or mapping issues
-7. Confirm import to add the data to your account
+1. Navigate to "Performance" in the main menu
+2. Select "Weight Records"
+3. Enter new weight measurements with dates
+4. View growth curves and comparisons to benchmarks
+5. Identify top and bottom performers
 
-#### Data Validation and Quality
+### Reproductive Performance
 
-The platform helps ensure your data is accurate and useful:
-- Automatic validation checks flag potential errors
-- Historical comparison identifies unusual values
-- Visualization tools help spot outliers
-- Data quality score shows completeness and consistency
-- Suggestions for improving data collection practices
+Monitor breeding success and efficiency:
 
-## Participating in Breeding Programs
+1. Navigate to "Performance" in the main menu
+2. Select "Reproduction"
+3. Record breeding events, pregnancies, and births
+4. View key metrics like conception rates and litter size
+5. Identify animals with superior reproductive traits
 
-As a farmer, you play a crucial role in agricultural innovation by participating in breeding programs and field trials.
+### Health and Wellness Tracking
 
-### Finding Breeding Programs
+Monitor animal health status:
 
-1. Navigate to "Breeding Programs" in the main menu
-2. Browse available programs filtered by:
-   - Crop type
-   - Geographic region
-   - Program duration
-   - Compensation offered
-3. Click on programs of interest to view details:
-   - Research objectives
-   - Farmer requirements
-   - Timeline and commitments
-   - Support provided
-   - Compensation details
-4. Use the "Match Me" tool to find programs best suited to your farm
+1. Navigate to "Health" in the main menu
+2. Record treatments, vaccinations, and observations
+3. Track disease resistance and resilience
+4. Set up alerts for health issues
+5. Generate health reports for management decisions
 
-### Participating in Field Trials
+## Genetic Improvement Tools
 
-```mermaid
-sequenceDiagram
-    participant Farmer
-    participant Platform
-    participant Researcher
-    
-    Farmer->>Platform: Express interest in program
-    Platform->>Researcher: Notify of farmer interest
-    Researcher->>Platform: Review farm suitability
-    
-    alt Farm Suitable
-        Platform->>Farmer: Send participation offer
-        Farmer->>Platform: Accept offer
-        Platform->>Researcher: Confirm participation
-        
-        Researcher->>Platform: Send trial materials
-        Platform->>Farmer: Notify materials shipping
-        
-        Note over Farmer,Researcher: Trial Implementation
-        
-        Farmer->>Platform: Record observations
-        Platform->>Researcher: Share observation data
-        Researcher->>Platform: Send feedback/questions
-        Platform->>Farmer: Deliver researcher feedback
-        
-        Note over Farmer,Researcher: Harvest/Completion
-        
-        Farmer->>Platform: Submit final results
-        Platform->>Researcher: Deliver final results
-        Researcher->>Platform: Send analysis and findings
-        Platform->>Farmer: Share research outcomes
-    else Farm Not Suitable
-        Platform->>Farmer: Notify not selected
-        Platform->>Farmer: Suggest alternative programs
-    end
-```
+### Accessing Breeding Values
 
-#### Step-by-Step Participation Guide
+Understand the genetic merit of your animals:
 
-1. **Application**
-   - Complete the program application form
-   - Provide details about your farm conditions and capabilities
-   - Submit any required documentation
+1. Navigate to "Genetics" in the main menu
+2. View Estimated Breeding Values (EBVs) for your flock
+3. Compare animals against population benchmarks
+4. Track genetic trends over time
+5. Filter and sort by traits of interest
 
-2. **Planning**
-   - Receive trial materials (seeds, treatments, etc.)
-   - Review trial protocol and requirements
-   - Participate in orientation (virtual or in-person)
-   - Plan field layout according to protocol
+### Breeding Decision Support
 
-3. **Implementation**
-   - Plant trial materials following protocol guidelines
-   - Record required observations at specified intervals
-   - Document conditions that might affect results
-   - Communicate issues or questions to researchers
+Make informed breeding decisions:
 
-4. **Data Collection**
-   - Use mobile app to record observations
-   - Take photos at designated growth stages
-   - Record management practices applied
-   - Note any unusual occurrences or observations
+1. Navigate to "Breeding" in the main menu
+2. Select "Mating Recommendations"
+3. Define your breeding objectives and constraints
+4. Review AI-generated mating suggestions
+5. Create breeding groups based on recommendations
 
-5. **Harvest and Reporting**
-   - Harvest according to protocol specifications
-   - Record yield and quality measurements
-   - Complete end-of-trial assessment
-   - Submit all data through the platform
+### Participating in Research Programs
 
-6. **Results and Feedback**
-   - Review trial results and analysis
-   - Provide feedback on variety performance
-   - Discuss findings with researchers
-   - Consider participation in follow-up trials
+Collaborate with researchers on genetic improvement:
 
-### Tracking Trial Progress
+1. Navigate to "Research" in the main menu
+2. Browse available research programs
+3. Review participation requirements and benefits
+4. Apply to join programs aligned with your goals
+5. Follow structured protocols for data collection
 
-The platform provides tools to help you manage and track your breeding trial participation:
-- Calendar view of required activities and observations
-- Notification reminders for upcoming tasks
-- Progress tracker showing completion status
-- Communication channel with research team
-- Photo timeline documenting crop development
+## Understanding Genetic Research
+
+### Research Findings for Farmers
+
+Access practical research insights:
+
+1. Navigate to "Knowledge" in the main menu
+2. Browse the research library filtered for farmer relevance
+3. Read simplified summaries of complex genetic studies
+4. Save and organize findings relevant to your operation
+5. Provide feedback on practical applicability
+
+### Connecting with Researchers
+
+Engage directly with animal genetics experts:
+
+1. Navigate to "Community" in the main menu
+2. Browse researcher profiles by area of expertise
+3. Send questions or collaboration requests
+4. Participate in virtual discussion forums
+5. Join webinars and virtual field days
 
 ## Using Emilia AI for Farming Decisions
 
-Emilia AI provides personalized assistance for farm management decisions and research interpretation.
+Leverage AI assistance for your operation:
 
-### Farmer-Specific AI Features
+- Breeding decision support
+- Animal health diagnostics
+- Performance analysis and benchmarking
+- Simplified explanations of genetic concepts
+- Personalized recommendations based on your data
 
-1. **Research Translation**
-   - Ask Emilia to explain technical research in practical terms
-   - Request summaries of research relevant to your crops
-   - Get plain-language explanations of scientific concepts
+To use Emilia AI:
+1. Click the Emilia AI icon in any screen
+2. Ask your question in everyday language
+3. Upload images or data if relevant
+4. Review and save important responses
+5. Provide feedback to improve future assistance
 
-2. **Diagnostic Assistance**
-   - Upload photos of crop issues for identification
-   - Describe symptoms to receive potential diagnoses
-   - Get management recommendations for identified problems
+## Data Visualization and Analysis
 
-3. **Decision Support**
-   - Ask for input on variety selection based on your conditions
-   - Get recommendations on timing for planting or treatments
-   - Receive guidance on interpreting soil test results
+### Performance Dashboards
 
-### Example AI Interactions
+Visualize your flock's performance:
 
-**Example 1: Crop Issue Diagnosis**
+1. Navigate to "Analytics" in the main menu
+2. Select from available dashboard templates
+3. Customize metrics and time periods
+4. Compare against regional or breed benchmarks
+5. Export reports for farm management meetings
 
-```
-Farmer: I'm seeing these yellow spots on my corn leaves. What could it be?
-[Photo uploaded]
+### Genetic Trend Analysis
 
-Emilia AI: Based on the image, these yellow spots appear to be symptoms of 
-Northern Corn Leaf Blight, a fungal disease caused by Exserohilum turcicum. 
-The elongated lesions with defined margins are characteristic of this disease.
+Track genetic progress over time:
 
-Management options include:
-1. Fungicide application (recommended products: [list])
-2. Ensuring adequate crop rotation
-3. Considering resistant varieties for next season
+1. Navigate to "Genetics" in the main menu
+2. Select "Genetic Trends"
+3. Choose traits of interest
+4. View progress across generations
+5. Compare your trends to industry benchmarks
 
-Would you like more specific recommendations based on your farm's conditions?
-```
+### Economic Analysis
 
-**Example 2: Research Interpretation**
+Evaluate the financial impact of breeding decisions:
 
-```
-Farmer: I heard about this new drought-resistant corn variety. Is it worth trying?
+1. Navigate to "Economics" in the main menu
+2. Enter your production parameters and costs
+3. Model different breeding scenarios
+4. Review projected returns on investment
+5. Make data-driven decisions for maximum profitability
 
-Emilia AI: Recent research on drought-resistant corn varieties shows promising 
-results, particularly for XYZ-123 which demonstrated 15-20% yield advantage under 
-water stress conditions compared to standard varieties.
+## Practical Applications
 
-However, these advantages were primarily observed in regions with specific 
-drought patterns. Based on your farm's location and the last 3 years of weather 
-data, your risk of the type of drought where these varieties excel is relatively 
-low (approximately 1 in 8 years).
+### Selecting Replacement Animals
 
-The cost premium for these seeds is currently about $45/acre. Given your farm's 
-specific conditions, the economic analysis suggests the investment might not 
-provide significant returns unless drought predictions for the coming season 
-indicate higher than normal risk.
+Use genetic information to choose future breeding stock:
 
-Would you like me to analyze the specific varieties available in your region?
-```
+1. Navigate to "Breeding" in the main menu
+2. Select "Replacement Selection"
+3. Define your selection criteria and thresholds
+4. Review ranked candidates with genetic metrics
+5. Make informed selection decisions
 
-### Best Practices for Using Emilia AI
+### Culling Decisions
 
-1. **Be Specific**: Provide detailed information about your situation
-2. **Share Context**: Include information about your location, conditions, and constraints
-3. **Ask Follow-ups**: Request clarification or more details as needed
-4. **Provide Feedback**: Rate responses to help improve future recommendations
-5. **Verify Recommendations**: Use Emilia's suggestions as input for decisions, but combine with your experience and local knowledge
+Optimize flock composition through data-driven culling:
 
-## Troubleshooting and Support
+1. Navigate to "Management" in the main menu
+2. Select "Culling Analysis"
+3. Review performance and genetic metrics
+4. Identify underperforming animals
+5. Make strategic culling decisions
 
-### Common Issues and Solutions
+### Marketing Breeding Stock
 
-| Issue | Possible Solution |
-|-------|------------------|
-| Cannot sync mobile data | Check internet connection, ensure app is updated to latest version, try force sync from settings menu |
-| Missing field boundaries | Go to "Farm Setup" > "Fields" and verify boundaries are properly defined |
-| Data not appearing in analytics | Check date filters, verify data was successfully submitted, refresh analytics view |
-| Cannot access breeding program | Verify program status is "Active", check that all agreements have been completed |
-| Emilia AI not responding | Refresh the page, check internet connection, try a more specific question |
+Showcase the genetic merit of your animals:
 
-### Getting Support
+1. Navigate to "Marketing" in the main menu
+2. Generate genetic summary reports
+3. Create visual pedigrees with performance data
+4. Highlight superior traits and breeding values
+5. Share reports with potential buyers
 
-If you encounter issues not covered in this guide:
+## Best Practices
 
-1. **In-App Help**: Click the "?" icon for contextual help
-2. **Knowledge Base**: Search the farmer-specific articles at help.agriculturalresearch.org
-3. **Community Forum**: Connect with other farmers at community.agriculturalresearch.org
-4. **Support Ticket**: Submit a support request through "Help" > "Contact Support"
-5. **Live Chat**: Available during business hours through the chat icon
-6. **Phone Support**: Call the Farmer Support Line at (555) 123-4567
+### Data Collection
+
+- Establish consistent measurement protocols
+- Record data promptly to avoid recall errors
+- Use standardized scoring systems
+- Collect contextual information (e.g., management groups)
+- Validate unusual measurements
+
+### Breeding Program Management
+
+- Define clear, measurable breeding objectives
+- Balance multiple traits in selection decisions
+- Manage inbreeding through strategic matings
+- Introduce new genetics strategically
+- Maintain detailed breeding records
+
+### Technology Integration
+
+- Synchronize with electronic identification systems
+- Connect with farm management software when possible
+- Back up important data regularly
+- Update mobile apps when new versions are available
+- Utilize offline capabilities in remote areas
+
+## Getting Help
+
+For assistance with the farmer interface:
+
+- Access the Farmer Knowledge Base
+- Watch tutorial videos
+- Ask Emilia AI for guidance
+- Join the farmer community forum
+- Contact platform support for complex issues
 
 ## Next Steps
 
-Now that you're familiar with the farmer-specific features, consider:
+To maximize value from the platform:
 
-1. **Complete Your Profile**: Add details about your farm to receive more targeted recommendations
-2. **Set Up Field Boundaries**: Define your fields for more accurate data collection
-3. **Import Historical Data**: Bring in past seasons' data for better analytics
-4. **Explore Breeding Programs**: Find opportunities to participate in research
-5. **Schedule a Training Session**: Sign up for a personalized walkthrough with our support team
-
-For more detailed information on specific features, refer to:
-- [Farmer Insights Dashboard](farmer/insights-dashboard.md)
-- [Data Entry & Management](farmer/data-entry.md)
-- [Breeding Program Participation](farmer/breeding-program.md)
+1. Complete your farm profile with comprehensive details
+2. Import historical data for better trend analysis
+3. Join a regional user group for peer learning
+4. Participate in a research program
+5. Set up regular data collection routines

@@ -1,219 +1,123 @@
 # Getting Started
 
-## Welcome to the Agricultural Research Platform
+## Welcome to the Animal Genetics Research Platform
 
-Welcome to the Agricultural Research Platform with Emilia AI integration. This comprehensive platform bridges the gap between agricultural researchers, farmers, and students by providing a unified ecosystem for advanced genomic analysis, AI-assisted research capabilities, and practical farming insights.
-
-This guide will help you get started with the platform, regardless of your role or technical expertise.
+The Animal Genetics Research Platform is a comprehensive system designed to connect livestock farmers, animal genetics researchers, and students in a collaborative environment. This guide will help you get started with the platform and navigate its key features.
 
 ## Platform Overview
 
-```mermaid
-graph TD
-    A[Agricultural Research Platform] --> B[Farmer Features]
-    A --> C[Researcher Features]
-    A --> D[Student Features]
-    A --> E[Administrator Features]
-    A --> F[Emilia AI Assistant]
-    
-    B --> B1[Farmer Insights Dashboard]
-    B --> B2[Data Entry & Collection]
-    B --> B3[Breeding Program Participation]
-    
-    C --> C1[Research Environment]
-    C --> C2[Breeding Engine]
-    C --> C3[Data Analysis Tools]
-    
-    D --> D1[Learning Resources]
-    D --> D2[Research Environment Access]
-    D --> D3[Guided Projects]
-    
-    E --> E1[User Management]
-    E --> E2[System Monitoring]
-    E --> E3[Configuration]
-    
-    F --> F1[Research Assistant]
-    F --> F2[Farmer Assistant]
-    F --> F3[Knowledge Base Access]
-    
-    style A fill:#f9f,stroke:#333,stroke-width:2px
-    style B,C,D,E,F fill:#bbf,stroke:#333,stroke-width:1px
-```
+The platform provides tools and resources for:
 
-## User Roles
+- **Livestock Farmers**: Access genetic insights, track animal performance, and participate in breeding programs
+- **Researchers**: Analyze genomic data, design breeding experiments, and collaborate with farmers
+- **Students**: Learn animal genetics concepts and participate in supervised research
+- **Administrators**: Manage platform access, monitor system performance, and support users
 
-The platform supports four primary user roles, each with tailored features and capabilities:
+## Creating Your Account
 
-1. **Farmer**: Access simplified research insights, track agricultural operations, participate in breeding programs, and contribute field data.
+1. Visit the platform's registration page
+2. Select your primary role (Farmer, Researcher, Student, or Administrator)
+3. Complete the registration form with your details
+4. Verify your email address
+5. Set up multi-factor authentication (recommended)
 
-2. **Researcher**: Analyze genomic and phenotypic data, design breeding experiments, access scientific literature, and collaborate with farmers and other researchers.
+## User Interface Overview
 
-3. **Student**: Learn research methodologies, participate in projects, access educational resources, and develop analytical skills.
+The platform interface adapts to your role, but all users have access to:
 
-4. **Administrator**: Manage user accounts, monitor system performance, configure system parameters, and support users.
+- **Dashboard**: Personalized overview of relevant information and activities
+- **Profile**: Manage your account settings and preferences
+- **Messages**: Communicate with other platform users
+- **Notifications**: Receive alerts about important events
+- **Help Center**: Access documentation and support resources
 
-## First-Time Login
+## Role-Specific Quick Start
 
-### Creating Your Account
+### For Farmers
 
-1. Navigate to the platform login page at `https://platform.agriculturalresearch.org`
-2. Click on "Create Account" button
-3. Choose your preferred authentication method:
-   - Email/Password
-   - OAuth 2.0 (Institutional login)
-   - DID Protocol
-   - Web3/MetaMask
-4. Complete the registration form with your details
-5. Select your primary role (Farmer, Researcher, Student)
-6. Verify your email address or institutional affiliation
-7. Set up multi-factor authentication (recommended)
+1. Complete your farm profile with details about your livestock
+2. Connect your existing farm management software (if applicable)
+3. Explore the Farmer Insights dashboard
+4. Review available breeding programs for participation
+5. Set up mobile access for field data collection
 
-### Login Process
+[Learn more in the Farmer Guide](farmer.md)
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant LoginPage
-    participant AuthService
-    participant Dashboard
-    
-    User->>LoginPage: Access login page
-    LoginPage->>User: Display authentication options
-    User->>LoginPage: Select authentication method
-    
-    alt Email/Password
-        User->>LoginPage: Enter credentials
-        LoginPage->>AuthService: Validate credentials
-        AuthService->>LoginPage: Return authentication result
-    else OAuth 2.0
-        LoginPage->>AuthService: Redirect to identity provider
-        AuthService->>User: Display institutional login
-        User->>AuthService: Provide institutional credentials
-        AuthService->>LoginPage: Return authentication result
-    else DID Protocol
-        User->>LoginPage: Provide DID verification
-        LoginPage->>AuthService: Verify DID
-        AuthService->>LoginPage: Return authentication result
-    else Web3/MetaMask
-        User->>LoginPage: Connect wallet
-        LoginPage->>AuthService: Verify wallet signature
-        AuthService->>LoginPage: Return authentication result
-    end
-    
-    alt Authentication Successful
-        AuthService->>Dashboard: Redirect to role-specific dashboard
-        Dashboard->>User: Display personalized dashboard
-    else Authentication Failed
-        AuthService->>LoginPage: Display error message
-        LoginPage->>User: Show authentication failure
-    end
-```
+### For Researchers
 
-## Platform Navigation
+1. Set up your research profile with specializations and interests
+2. Explore available datasets in your research area
+3. Launch a research environment (RStudio or JupyterHub)
+4. Connect with collaborators and farming partners
+5. Review documentation for specialized genetic analysis tools
 
-### Main Navigation Areas
+[Learn more in the Researcher Guide](researcher.md)
 
-The platform interface is organized into several key areas:
+### For Students
 
-1. **Top Navigation Bar**: User profile, notifications, help, and global search
-2. **Side Navigation Menu**: Main feature categories based on your role
-3. **Main Content Area**: Primary workspace for the current feature
-4. **Context Panel**: Contextual information and related actions
-5. **Footer**: Links to documentation, support, and legal information
+1. Complete your academic profile with institution and program details
+2. Explore available learning resources and tutorials
+3. Request access to relevant research projects
+4. Connect with mentors and instructors
+5. Begin guided learning pathways
 
-### Role-Specific Navigation
+[Learn more in the Student Guide](student.md)
 
-Each user role has a customized navigation menu with relevant features:
+### For Administrators
 
-**Farmer Navigation:**
-- Dashboard
-- Field Data
-- Crop Performance
-- Breeding Programs
-- Research Insights
-- Settings
+1. Review system documentation and administration guides
+2. Configure authentication and security settings
+3. Set up user groups and permission structures
+4. Explore monitoring and reporting tools
+5. Test support workflows and procedures
 
-**Researcher Navigation:**
-- Dashboard
-- Research Environment
-- Breeding Engine
-- Data Repository
-- Collaborations
-- Publications
-- Settings
-
-**Student Navigation:**
-- Dashboard
-- Learning Resources
-- Research Projects
-- Analysis Tools
-- Progress Tracking
-- Settings
-
-**Administrator Navigation:**
-- Dashboard
-- User Management
-- System Monitoring
-- Configuration
-- Reports
-- Settings
+[Learn more in the Administrator Guide](administrator.md)
 
 ## Using Emilia AI Assistant
 
-Emilia AI is an intelligent assistant integrated throughout the platform to provide context-aware support and information.
+All users have access to Emilia AI, an intelligent assistant specialized in animal genetics:
 
-### Accessing Emilia AI
+1. Access Emilia AI from the icon in the navigation bar
+2. Ask questions in natural language about animal genetics, breeding, or platform features
+3. Upload images or data for analysis and recommendations
+4. Save important conversations for future reference
+5. Provide feedback to help improve Emilia's responses
 
-1. Click the Emilia AI icon (🤖) in the bottom right corner of any page
-2. Type your question or request in natural language
-3. Emilia will respond with relevant information, suggestions, or actions
+Emilia adapts its responses based on your role and expertise level, providing technical details for researchers and practical explanations for farmers.
 
-### Example Interactions
+## Mobile Access
 
-**For Farmers:**
-- "Show me the latest research on drought-resistant corn varieties"
-- "Help me interpret these soil test results"
-- "What planting schedule do you recommend for my region?"
+The platform is accessible on mobile devices through:
 
-**For Researchers:**
-- "Summarize recent publications on gene editing in wheat"
-- "Help me design an experiment to test heat tolerance in these varieties"
-- "What statistical approach is best for analyzing this multi-environment trial?"
+1. Responsive web interface optimized for smartphones and tablets
+2. Progressive Web App (PWA) for app-like experience
+3. Native mobile applications for iOS and Android (coming soon)
 
-**For Students:**
-- "Explain heritability calculation methods"
-- "Guide me through the process of genomic selection"
-- "What learning resources do you recommend for breeding statistics?"
-
-**For Administrators:**
-- "Show me system usage statistics for the past week"
-- "Help me troubleshoot user access issues"
-- "Generate a report on research environment utilization"
+Mobile access is particularly valuable for farmers collecting data in the field.
 
 ## Getting Help
 
-### In-Platform Help
+If you need assistance with the platform:
 
-- **Contextual Help**: Click the "?" icon next to any feature for specific guidance
-- **Tooltips**: Hover over interface elements for brief explanations
-- **Guided Tours**: Interactive walkthroughs of key features
-- **Knowledge Base**: Searchable repository of help articles and tutorials
-
-### Support Options
-
-- **Chat Support**: Available during business hours through the support chat icon
-- **Email Support**: Contact support@agriculturalresearch.org
-- **Community Forums**: Discuss issues and share tips with other users
-- **Training Webinars**: Regular online training sessions (schedule available in the Help section)
+1. **In-app Help**: Click the help icon for contextual guidance
+2. **Documentation**: Access comprehensive user guides and tutorials
+3. **Emilia AI**: Ask the AI assistant for help with specific features
+4. **Support Team**: Contact human support for complex issues
+5. **Community Forums**: Connect with other users to share experiences
 
 ## Next Steps
 
-Depending on your role, we recommend starting with the following guides:
+After getting familiar with the basic platform features:
 
-- [Farmer Guide](farmer.md): Learn how to use insights dashboard, data collection tools, and participate in breeding programs
-- [Researcher Guide](researcher.md): Explore research environments, breeding engine, and collaboration tools
-- [Student Guide](student.md): Discover learning resources and research participation opportunities
-- [Administrator Guide](administrator.md): Understand user management and system monitoring tools
-- [Emilia AI Guide](emilia-ai.md): Learn advanced techniques for leveraging AI assistance
+1. Explore role-specific guides for detailed information
+2. Complete your profile to enhance collaboration opportunities
+3. Join the community forum to connect with other users
+4. Register for upcoming webinars and training sessions
+5. Set up notifications for areas of interest
 
-Welcome aboard! We're excited to have you join the Agricultural Research Platform community.
+We recommend starting with your role-specific guide to learn about features most relevant to your needs:
+
+- [Farmer Guide](farmer.md)
+- [Researcher Guide](researcher.md)
+- [Student Guide](student.md)
+- [Administrator Guide](administrator.md)
