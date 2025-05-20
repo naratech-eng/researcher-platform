@@ -13,7 +13,9 @@
     "-highlight",
     "prism",
     "-fontsettings",
-    "-livereload"
+    "-livereload",
+    "mermaid-gb3",
+    "-mermaid"
   ],
   "pluginsConfig": {
     "prism": {
