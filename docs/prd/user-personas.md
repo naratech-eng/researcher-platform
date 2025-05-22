@@ -33,22 +33,42 @@ The following diagram illustrates how the different personas interact with each 
 
 ```mermaid
 flowchart TD
-    A[Animal Genetics Research Platform] --> B[Farmer]
-    A --> C[Researcher]
-    A --> D[Student]
-    A --> E[Administrator]
+    subgraph Platform[Animal Genetics Research Platform]
+        A[Data Integration Layer]
+        B[Analytics Engine]
+        C[User Interface]
+    end
     
-    C -- "Creates genetic research" --> F[Knowledge Base]
-    F -- "Provides breeding insights" --> B
-    F -- "Provides learning materials" --> D
+    subgraph Research[Research Institution]
+        R[Researchers]
+        RD[Research Data]
+        E[Experiments]
+    end
     
-    B -- "Provides animal data" --> G[Data Repository]
-    G -- "Supplies genetic research data" --> C
-    G -- "Provides learning datasets" --> D
+    subgraph Farm[Farm Operations]
+        F[Farmers]
+        FD[Farm Data]
+        A[Animals]
+    end
     
-    E -- "Manages access for" --> B
-    E -- "Manages access for" --> C
-    E -- "Manages access for" --> D
+    R -- "Design Studies\nUpload Data" --> A
+    F -- "Record Observations\nManage Breeding" --> A
+    
+    A -- "Standardized\nData" --> B
+    B -- "Breeding Insights\nGenetic Analysis" --> C
+    
+    C -- "Access Research\nView Analytics" --> F
+    C -- "Analyze Results\nPublish Findings" --> R
+    
+    RD -- "Genetic Data\nResearch Findings" --> A
+    FD -- "Performance Data\nPedigree Records" --> A
+    
+    E -- "Experimental Data" --> A
+    A -- "Standardized Metrics" --> E
+    
+    style Platform fill:#f5f5f5,stroke:#333,stroke-width:2px
+    style Research fill:#e6f3ff,stroke:#333,stroke-width:1px
+    style Farm fill:#e6ffe6,stroke:#333,stroke-width:1px
     
     C -- "Mentors" --> D
     C -- "Collaborates with" --> B
@@ -111,14 +131,13 @@ journey
 The following chart shows how functional requirements map to each persona:
 
 ```mermaid
-pie title Functional Requirements by Primary Persona
-    "Farmer" : 35
+pie title Functional Requirements 
+    "Farmer" : 3
     "Researcher" : 45
     "Student" : 15
     "Administrator" : 25
     "All Users" : 10
 ```
-
 For detailed mapping of requirements to personas, see the [Functional Requirements](functional-requirements.md) section.
 
 ## Persona Validation

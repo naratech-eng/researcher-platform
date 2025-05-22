@@ -1,8 +1,8 @@
-# Agricultural Research Platform Documentation
+# Animal Genetics Research Platform Documentation
 
 ## Overview
 
-This repository contains comprehensive documentation for the Agricultural Research Platform with Emilia AI integration. The documentation is structured for publication on GitBook and covers all aspects of the platform including product requirements, technical architecture, implementation recommendations, and user guides.
+This repository contains comprehensive documentation for the Animal Genetics Research Platform with Emilia AI integration. The documentation is structured for publication on GitBook and covers all aspects of the platform including product requirements, technical architecture, implementation recommendations, and user guides.
 
 ## Repository Structure
 
@@ -113,12 +113,6 @@ Comprehensive guides for each user persona:
 1. Use any Markdown viewer to read individual files
 2. For best results with diagrams, use a Markdown viewer that supports Mermaid diagrams
 3. Follow the structure in `SUMMARY.md` for logical navigation
-
-### For PDF Generation
-
-To convert the documentation to PDF format:
-1. Use the `manus-md-to-pdf` utility for individual files
-2. Example: `manus-md-to-pdf /path/to/file.md /path/to/output.pdf`
 
 ## Validation
 
