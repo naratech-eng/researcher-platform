@@ -40,6 +40,7 @@ mindmap
       Resource Efficiency
       Operational Costs
       Scaling Strategies
+      
 ```
 
 ## Performance Requirements
@@ -228,46 +229,46 @@ mindmap
 
 The following diagram illustrates how non-functional requirements relate to system components:
 
-```mermaid
+```mermaid 
 graph TD
-    A[Frontend] --> B[Performance]
-    A --> C[Usability]
-    A --> D[Security]
-    
-    E[API Gateways] --> B
-    E --> D
-    E --> F[Reliability]
-    
-    G[Backend Services] --> B
-    G --> D
-    G --> F
-    G --> H[Maintainability]
-    
-    I[Research Environments] --> B
-    I --> F
-    I --> J[Cost Optimization]
-    
-    K[Emilia AI] --> B
-    K --> C
-    K --> J
-    
-    L[Storage Services] --> F
-    L --> J
-    L --> D
-    
-    style A fill:#f9f,stroke:#333,stroke-width:1px
-    style E fill:#bbf,stroke:#333,stroke-width:1px
-    style G fill:#bfb,stroke:#333,stroke-width:1px
-    style I fill:#fbb,stroke:#333,stroke-width:1px
-    style K fill:#ffd,stroke:#333,stroke-width:1px
-    style L fill:#dff,stroke:#333,stroke-width:1px
-    
-    style B fill:#eee,stroke:#333,stroke-width:1px
-    style C fill:#eee,stroke:#333,stroke-width:1px
-    style D fill:#eee,stroke:#333,stroke-width:1px
-    style F fill:#eee,stroke:#333,stroke-width:1px
-    style H fill:#eee,stroke:#333,stroke-width:1px
-    style J fill:#eee,stroke:#333,stroke-width:1px
+  A[Frontend] --> B[Performance]
+  A --> C[Usability]
+  A --> D[Security]
+  
+  E[API Gateways] --> B
+  E --> D
+  E --> F[Reliability]
+  
+  G[Backend Services] --> B
+  G --> D
+  G --> F
+  G --> H[Maintainability]
+  
+  I[Research Environments] --> B
+  I --> F
+  I --> J[Cost Optimization]
+  
+  K[Emilia AI] --> B
+  K --> C
+  K --> J
+  
+  L[Storage Services] --> F
+  L --> J
+  L --> D
+  
+  style A fill:#f9f,stroke:#333,stroke-width:1px
+  style E fill:#bbf,stroke:#333,stroke-width:1px
+  style G fill:#bfb,stroke:#333,stroke-width:1px
+  style I fill:#fbb,stroke:#333,stroke-width:1px
+  style K fill:#ffd,stroke:#333,stroke-width:1px
+  style L fill:#dff,stroke:#333,stroke-width:1px
+  
+  style B fill:#eee,stroke:#333,stroke-width:1px
+  style C fill:#eee,stroke:#333,stroke-width:1px
+  style D fill:#eee,stroke:#333,stroke-width:1px
+  style F fill:#eee,stroke:#333,stroke-width:1px
+  style H fill:#eee,stroke:#333,stroke-width:1px
+  style J fill:#eee,stroke:#333,stroke-width:1px
 ```
 
 ## Non-Functional Requirements Testing Strategy
@@ -286,14 +287,14 @@ For detailed testing procedures, see the [User Acceptance Test Plan](../acceptan
 
 The following chart illustrates the prioritization of non-functional requirement categories:
 
-```mermaid
+```mermaid 
 pie title Non-Functional Requirements Priority Distribution
-    "Security" : 30
-    "Performance" : 25
-    "Reliability" : 20
-    "Usability" : 15
-    "Maintainability" : 5
-    "Cost Optimization" : 5
+  "Security" : 30
+  "Performance" : 25
+  "Reliability" : 20
+  "Usability" : 15
+  "Maintainability" : 5
+  "Cost Optimization" : 5
 ```
 
 This prioritization reflects the critical importance of security, performance, and reliability for the Agricultural Research Platform, while still maintaining focus on usability, maintainability, and cost optimization.
