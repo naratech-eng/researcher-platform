@@ -18,7 +18,50 @@ The platform serves as a centralized environment for animal genetics research, b
 
 The following diagram illustrates the high-level architecture of the Animal Genetics Research Platform:
 
-![Platform Architecture](../images/Architecture-platform.png)
+```mermaid
+graph TD
+    Auth[User Authentication] -->|OAuth 2.0| UM[User Management]
+    Auth -->|DID Protocol| UM[User Management]
+    Auth -->|Web3/MetaMask| UM[User Management]
+    
+    UM -->|RBAC| Farmer[Farmer]
+    UM -->|RBAC| Researcher[Researcher]
+    UM -->|RBAC| Student[Student]
+    UM -->|RBAC| Admin[Admin]
+    
+    Farmer --> FI[Farmer Insights]
+    Farmer --> BE[Breeding Engine]
+    Farmer --> DE[Data Entry]
+    
+    BE --> Heritability
+    BE --> MS[Mating Strategy]
+    
+    Researcher --> RE[Researcher Environment]
+    Student --> RE
+    Researcher --> EmiliaAI[Emilia AI]
+    Student --> EmiliaAI
+    
+    RE --> RStudio
+    RE --> JupiterHUB
+    
+    Admin --> URM[User/Role Management]
+    
+    subgraph User/Role Management
+        URM --> AC[Access Control]
+        URM --> UR[User Registration]
+        URM --> RM[Role Management]
+    end
+    
+    style Auth fill:#f9f,stroke:#333,stroke-width:2px
+    style UM fill:#bbf,stroke:#333,stroke-width:2px
+    style Farmer fill:#bfb,stroke:#333,stroke-width:2px
+    style Researcher fill:#bfb,stroke:#333,stroke-width:2px
+    style Student fill:#bfb,stroke:#333,stroke-width:2px
+    style Admin fill:#bfb,stroke:#333,stroke-width:2px
+    style EmiliaAI fill:#fbb,stroke:#333,stroke-width:2px
+    style RE fill:#ffd,stroke:#333,stroke-width:2px
+    style URM fill:#ddd,stroke:#333,stroke-width:1px,stroke-dasharray: 5 5
+```
 
 *Figure 1: High-level architecture of the Animal Genetics Research Platform showing the integration of all major components including user interfaces, backend services, databases, and the Emilia AI system.*
 
@@ -62,7 +105,34 @@ Sophisticated information retrieval that:
 
 Emilia AI serves as the intelligent assistant within the platform, providing advanced capabilities for both farmers and researchers. The architecture of Emilia AI is illustrated below:
 
-![Emilia AI Architecture](../images/Emilia-AI.png)
+```mermaid
+graph TD
+    User((User)) -->|Query/Prompt| AppServer[Application Server]
+    AppServer -->|Query| Search[Search]
+    Search -->|Fetch Information| KB[Knowledge Base]
+    KB -->|Relevant information| Search
+    Search -->|Enhanced context| AppServer
+    AppServer -->|Enhanced Context| LLM[LLM]
+    LLM -->|Generated text response| AppServer
+    AppServer -->|Response| User
+    KB -->|Internal Database, Web API, Web Search| DataSources[Data Sources]
+    
+    subgraph Knowledge Base
+        DataSources
+    end
+    
+    subgraph LLM Components
+        LLM
+        note[Perplexity, Llama Maverick]
+    end
+    
+    style User fill:#f9f,stroke:#333,stroke-width:2px
+    style AppServer fill:#bbf,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5
+    style Search fill:#bfb,stroke:#333,stroke-width:2px
+    style KB fill:#fbb,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5
+    style LLM fill:#ffd,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5
+    style DataSources fill:#ddd,stroke:#333,stroke-width:1px
+```
 
 *Figure 2: Emilia AI architecture showing the components that enable natural language understanding, context-aware responses, and integration with the platform's knowledge base.*
 
