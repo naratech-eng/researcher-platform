@@ -2,12 +2,13 @@
 
 ## Introduction to the Animal Genetics Research Platform
 
-The Animal Genetics Research Platform is a comprehensive system that bridges the gap between cutting-edge genetic research and practical livestock management. This integrated platform combines advanced genomic analysis tools, AI-assisted research capabilities, and practical breeding insights within a unified ecosystem, with a special focus on sheep genetics and breeding optimization.
+The Animal Genetics Research Platform is a comprehensive system designed to bridge the gap between animal genetics researchers, livestock farmers, and students. The platform integrates advanced genomic analysis tools, AI-assisted research capabilities, and practical breeding insights within a unified ecosystem.
 
 ## Project Purpose
 
-The system is designed to transform livestock breeding through data-driven insights by:
+The system aims to accelerate agricultural innovation, improve livestock breeding outcomes, and facilitate knowledge transfer between academic research and practical farming applications. By connecting researchers with farmers and providing powerful analytical tools, the platform enables:
 
+- Faster development of improved animal genetics
 - Enabling real-time access to comprehensive research center data on sheep genetics and performance
 - Providing farmers with actionable insights through intuitive query interfaces
 - Facilitating advanced genetic analysis including heritability calculations and mating simulations

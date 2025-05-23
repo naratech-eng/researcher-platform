@@ -18,23 +18,9 @@ The platform serves as a centralized environment for animal genetics research, b
 
 The following diagram illustrates the high-level architecture of the Animal Genetics Research Platform:
 
-```mermaid
-graph TD
-    User[User] -->|Query/Prompt| AppServer[Application Server]
-    AppServer -->|Query| Search[Search]
-    Search -->|Fetch Information| KB[Knowledge Base]
-    KB -->|Relevant information| Search
-    Search -->|Enhanced context| AppServer
-    AppServer -->|Enhanced Context| LLM[LLM]
-    LLM -->|Generated text response| AppServer
-    KB -->|Internal Database, Web API, Web Search| Data[Data Sources]
-    
-    style User fill:#f9f,stroke:#333,stroke-width:2px
-    style AppServer fill:#bbf,stroke:#333,stroke-width:2px
-    style Search fill:#bfb,stroke:#333,stroke-width:2px
-    style KB fill:#fbb,stroke:#333,stroke-width:2px
-    style LLM fill:#ffd,stroke:#333,stroke-width:2px
-```
+![Platform Architecture](../images/Architecture-platform.png)
+
+*Figure 1: High-level architecture of the Animal Genetics Research Platform showing the integration of all major components including user interfaces, backend services, databases, and the Emilia AI system.*
 
 ## Core Components
 
@@ -72,13 +58,21 @@ Sophisticated information retrieval that:
 - Supports natural language queries
 - Retrieves relevant information for the AI system
 
-### 5. LLM Integration (Emilia AI)
+### 5. Emilia AI Integration
 
-Advanced AI capabilities including:
+Emilia AI serves as the intelligent assistant within the platform, providing advanced capabilities for both farmers and researchers. The architecture of Emilia AI is illustrated below:
+
+![Emilia AI Architecture](../images/Emilia-AI.png)
+
+*Figure 2: Emilia AI architecture showing the components that enable natural language understanding, context-aware responses, and integration with the platform's knowledge base.*
+
+Emilia AI provides:
 - Natural language understanding of livestock genetics queries
 - Context-aware responses tailored to user expertise level
 - Integration of retrieved information with generated content
 - Multi-modal input processing (text, images, data)
+- RAG (Retrieval-Augmented Generation) for research literature analysis
+- Database query capabilities for generating insights and visualizations
 
 ### 6. Research Environment
 

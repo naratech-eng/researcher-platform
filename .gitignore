@@ -172,3 +172,9 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# VS Code workspace files
+researcher-platform.code-workspace
+*.code-workspace
+.DS_Store
+docs/.DS_Store

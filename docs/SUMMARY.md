@@ -1,7 +1,6 @@
 # Summary
 
 ## Introduction
-* [About This Documentation](README.md)
 * [Project Overview](introduction/project-overview.md)
 * [How to Use This Documentation](introduction/how-to-use.md)
 
@@ -25,6 +24,7 @@
   * [Additional Features](prd/requirements/additional-features.md)
 * [Non-Functional Requirements](prd/non-functional-requirements.md)
 * [Success Metrics & KPIs](prd/success-metrics.md)
+* [MoSCoW Requirements](MoSCoW_Requirements.md)
 
 ## Technical Architecture
 * [Architecture Overview](architecture/overview.md)
@@ -36,6 +36,7 @@
   * [Researcher Environment](architecture/components/researcher-environment.md)
   * [Emilia AI Components](architecture/components/emilia-ai.md)
   * [Storage Services](architecture/components/storage-services.md)
+  * [Sheep Genetics Schema](architecture/components/sheep-genetics-schema.md)
 * [Data Flow & Integration](architecture/data-flow-integration.md)
 * [Security Architecture](architecture/security.md)
 * [Scalability & Performance](architecture/scalability-performance.md)
