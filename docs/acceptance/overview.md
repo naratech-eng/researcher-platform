@@ -7,6 +7,7 @@ User Acceptance Testing (UAT) is a critical phase in the development of the Agri
 ## Acceptance Testing Approach
 
 ```mermaid
+
 graph TD
     A[User Acceptance Testing] --> B[Feature Acceptance]
     A --> C[Performance Acceptance]
@@ -34,6 +35,7 @@ graph TD
     style C fill:#bfb,stroke:#333,stroke-width:1px
     style D fill:#fbb,stroke:#333,stroke-width:1px
     style E fill:#ffd,stroke:#333,stroke-width:1px
+
 ```
 
 ## UAT Principles
