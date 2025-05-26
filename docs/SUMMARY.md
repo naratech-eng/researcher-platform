@@ -27,7 +27,7 @@
 * [MoSCoW Requirements](MoSCoW_Requirements.md)
 
 ## Technical Architecture
-* [Architecture Overview](architecture/Architecture_Overview.md)
+* [Architecture Overview](architecture/arch-overview.md)
 * [System Components](architecture/system-components.md)
   * [Frontend](architecture/components/frontend.md)
   * [API Gateways](architecture/components/api-gateways.md)

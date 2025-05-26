@@ -60,8 +60,9 @@ graph TD
 
 | Technology | Purpose | Rationale |
 |------------|---------|-----------|
-| Node.js | JavaScript runtime | Enables unified language across frontend and backend |
-| Express | Web framework | Provides robust routing and middleware capabilities |
+| Bun.js | JavaScript runtime | Provides high-performance backend for user services |
+| FastAPI | Python web framework | Powers efficient farmer data entry services |
+| Neo4J API | Graph database interface | Enables complex relationship queries for AI services |
 | GraphQL | API query language | Allows flexible, client-specific data retrieval |
 | REST APIs | Traditional API endpoints | Supports integration with external systems |
 | WebSockets | Real-time communication | Enables collaborative features and live updates |
@@ -70,6 +71,7 @@ graph TD
 
 | Technology | Purpose | Rationale |
 |------------|---------|-----------|
+| Better-Auth | Authentication framework | Comprehensive solution for modern authentication flows |
 | OAuth 2.0 | Authentication protocol | Industry standard for secure authentication |
 | JWT | Token-based authentication | Enables stateless authentication across services |
 | DID Protocol | Decentralized identifiers | Supports portable identity verification |
@@ -81,9 +83,10 @@ graph TD
 
 | Technology | Purpose | Rationale |
 |------------|---------|-----------|
-| PostgreSQL | Primary relational database | Handles complex relationships in animal genetics data |
-| MongoDB | Document database | Stores flexible research data and unstructured content |
+| PostgreSQL AWS RDS | Primary relational database | Handles complex relationships in animal genetics data |
+| DynamoDB AWS | Document database | Stores flexible research data and unstructured content |
 | Neo4j | Graph database | Manages complex pedigree and genetic relationship networks |
+| ChromaDB | Vector database | Enables semantic search and retrieval for AI applications |
 | Redis | In-memory data store | Provides caching and session management |
 | ClickHouse | Column-oriented analytics DB | Enables high-performance queries on large genetic datasets |
 

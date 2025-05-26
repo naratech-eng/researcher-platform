@@ -138,4 +138,4 @@ This document is part of a comprehensive set of specifications for the Animal Ge
 - [Product Vision](product-vision.md): Strategic vision and goals
 - [User Personas](user-personas.md): Detailed user profiles and needs
 - [Functional Requirements](functional-requirements.md): Specific platform capabilities
-- [Technical Architecture](../architecture/overview.md): System design and components
+- [Technical Architecture](../architecture/arch-overview.md): System design and components
