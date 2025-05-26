@@ -1,22 +1,23 @@
-# Comprehensive Infrastructure & Deployment Strategy Analysis
-## Animal Genetics Research Platform - Multi-Tier Architecture
+# Comprehensive Infrastructure & Deployment Strategy Analysis - Updated Architecture
+## Animal Genetics Research Platform - Simplified Multi-Tier Architecture
 
 ### Executive Summary
 
-This document provides a comprehensive analysis of the proposed multi-tier architecture for the Animal Genetics Research Platform, featuring distributed Kubernetes clusters, advanced RAG processing, and cloud-native storage solutions. The analysis covers cluster organization, service mesh configuration, load balancing strategies, and inter-cluster communication patterns.
+This document provides a comprehensive analysis of the updated simplified multi-tier architecture for the Animal Genetics Research Platform, featuring consolidated EC2 infrastructure, enhanced AI integration with Neo4j RAG system, and streamlined backend services. The analysis covers the new 2-EC2 deployment strategy, real-time ETL processes, and integrated Emilia AI capabilities.
 
 ---
 
 ## 1. Enhanced Architecture Overview
 
-### 1.1 Multi-Tier Architecture Components
+### 1.1 Simplified Multi-Tier Architecture Components
 
-The proposed architecture consists of four primary tiers with specialized cluster deployments:
+The updated architecture consists of a streamlined design with two primary EC2 instances and enhanced AI integration:
 
 ```mermaid
 %%{init: {
   'theme': 'base',
   'themeVariables': {
+    'darkMode': false,
     'primaryColor': '#ff6b6b',
     'primaryTextColor': '#fff',
     'primaryBorderColor': '#ff4757',
@@ -50,81 +51,72 @@ graph TB
         ALB[⚖️ AWS ALB<br/>SSL Termination<br/>Health Checks]
     end
 
-    %% Application Tier - Cluster 1
-    subgraph "🏗️ Primary Backend Cluster (EC2-1)"
-        subgraph "Backend Services"
-            API1[🔧 User Backend API<br/>Bun.js - 3 Replicas<br/>User Management<br/>Authentication]
-            API2[🔬 Research Backend API<br/>Bun.js - 3 Replicas<br/>Data Processing<br/>Analytics]
-            FAPI[⚡ FastAPI Service<br/>Python - 3 Replicas<br/>ML/AI Processing<br/>Genomic Analysis]
+    %% Server Side EC2 - Consolidated
+    subgraph "🏗️ Server Side EC2 Instance"
+        subgraph "Primary Backend Cluster"
+            API1[🔧 User Backend API<br/>Bun.js - 3 Replicas<br/>User Management<br/>Farmer Data Entry<br/>Authentication]
+            API2[⚡ Research API<br/>FastAPI - 3 Replicas<br/>ML/AI Processing<br/>Genomic Analysis<br/>Research Operations]
         end
         
-        subgraph "Service Mesh"
-            ISTIO1[🕸️ Istio Service Mesh<br/>Traffic Management<br/>Security Policies<br/>Observability]
-        end
-    end
-
-    %% Research Computing Cluster
-    subgraph "🧪 Research Computing Cluster (EC2-2)"
-        subgraph "Research Environments"
-            RS[📊 RStudio Server<br/>3 Pods<br/>Statistical Analysis<br/>R Environments]
-            JH[📓 JupyterHub<br/>3 Pods<br/>Python Notebooks<br/>ML Workflows]
-        end
-        
-        subgraph "Compute Resources"
-            GPU[🎮 GPU Nodes<br/>CUDA Support<br/>Deep Learning<br/>Genomic Processing]
-        end
-    end
-
-    %% RAG System Cluster
-    subgraph "🤖 RAG System Cluster (EC2-3)"
-        subgraph "Emilia AI Components"
-            RAG[🧠 RAG Engine<br/>Vector Search<br/>Context Retrieval<br/>LLM Integration]
-            VDB[🗃️ Vector Database<br/>Embeddings Storage<br/>Semantic Search<br/>Knowledge Base]
+        subgraph "Emilia AI Cluster"
+            RAG[🧠 Emilia AI RAG Engine<br/>Vector Search<br/>Context Retrieval<br/>LLM Integration<br/>Knowledge Processing]
+            CHROMA[🗃️ ChromaDB<br/>Vector Embeddings<br/>Journal Data Storage<br/>Semantic Search<br/>Research Papers]
             LLM[🤖 LLM Gateway<br/>Model Orchestration<br/>Response Generation<br/>Context Management]
+            JAPI[📚 Journal APIs<br/>PubMed Integration<br/>Nature API<br/>Research Data<br/>External Sources]
         end
         
-        subgraph "AI Infrastructure"
-            REDIS[⚡ Redis Cluster<br/>Caching Layer<br/>Session Storage<br/>Real-time Data]
+        subgraph "Research Environment Cluster"
+            RS[📊 RStudio Server<br/>3 Pods<br/>Statistical Analysis<br/>R Environments]
+            JH[📓 JupyterHub<br/>3 Pods<br/>Python Notebooks<br/>ML Workflows<br/>Data Science]
         end
     end
 
-    %% Data Tier
-    subgraph "💾 Data Tier"
-        subgraph "Primary Databases"
-            DDB[🗄️ DynamoDB<br/>User Profiles<br/>Session Data<br/>Preferences<br/>NoSQL Flexibility]
-            PG[🐘 PostgreSQL RDS<br/>Farm Data<br/>Research Records<br/>Genetic Information<br/>ACID Compliance]
-        end
-        
-        subgraph "Specialized Storage"
-            NEO[🕸️ Neo4j<br/>Pedigree Networks<br/>Genetic Relationships<br/>Graph Queries]
-            CH[📊 ClickHouse<br/>Analytics Data<br/>Time Series<br/>Performance Metrics]
-        end
-    end
-
-    %% Storage Layer
-    subgraph "☁️ AWS S3 Storage Layer"
-        subgraph "User Workspaces"
-            S3U[📁 User Workspaces<br/>s3://platform-users/<br/>Isolated Directories<br/>Access Controls]
-            S3R[📁 Research Data<br/>s3://platform-research/<br/>Shared Datasets<br/>Version Control]
-        end
-        
-        subgraph "System Storage"
-            S3B[📁 Backups<br/>s3://platform-backups/<br/>Automated Snapshots<br/>Disaster Recovery]
-            S3L[📁 Logs & Analytics<br/>s3://platform-logs/<br/>Audit Trails<br/>Performance Data]
-        end
-    end
-
-    %% DevOps & Monitoring
-    subgraph "🔧 DevOps & Monitoring (EC2-4)"
+    %% Monitoring EC2 - CI/CD Tools
+    subgraph "🔧 Monitoring & CI/CD EC2 Instance"
         subgraph "CI/CD Pipeline"
-            ARGO[🔄 ArgoCD<br/>GitOps Deployment<br/>Multi-Cluster Sync<br/>Rollback Capabilities]
             JENKINS[🏗️ Jenkins<br/>Build Automation<br/>Testing Pipeline<br/>Integration Tests]
+            ARGO[🔄 ArgoCD<br/>GitOps Deployment<br/>Multi-Cluster Sync<br/>Rollback Capabilities]
+            HELM[⚙️ Helm Charts<br/>Package Management<br/>Configuration<br/>Template Management]
+        end
+        
+        subgraph "ETL Orchestration"
+            AIRFLOW[🌊 Apache Airflow<br/>Workflow Orchestration<br/>Batch ETL Jobs<br/>External API Ingestion<br/>Data Pipeline Management]
         end
         
         subgraph "Monitoring Stack"
             PROM[📊 Prometheus<br/>Metrics Collection<br/>Alerting Rules<br/>Service Discovery]
             GRAF[📈 Grafana<br/>Visualization<br/>Dashboards<br/>Real-time Monitoring]
             ELK[📋 ELK Stack<br/>Log Aggregation<br/>Search & Analysis<br/>Audit Logging]
+        end
+    end
+
+    %% Data Tier with ETL - Next Row
+    subgraph "💾 Data Tier"
+        subgraph "Primary Databases"
+            PG[🐘 PostgreSQL RDS<br/>Farm Data<br/>Animal Records<br/>Structured Data<br/>Farmer Entries]
+            DDB[🗄️ DynamoDB<br/>Chat History<br/>User Preferences<br/>AI Model Settings<br/>Workspace Configs]
+        end
+        
+        subgraph "AI Knowledge Base"
+            NEO[🕸️ Neo4j<br/>Genetic Relationships<br/>Pedigree Networks<br/>RAG Knowledge Base<br/>Graph Queries]
+        end
+        
+        subgraph "ETL Process"
+            CDC[🔄 CDC Stream<br/>Real-time ETL<br/>PostgreSQL → Neo4j<br/>Genetic Data Sync<br/>Change Data Capture]
+            KAFKA[📨 Apache Kafka<br/>Message Streaming<br/>Event Processing<br/>Data Pipeline Buffer]
+        end
+    end
+
+    %% Storage Layer - Next Row
+    subgraph "☁️ AWS S3 Storage Layer"
+        subgraph "User Workspaces"
+            S3U[📁 User Workspaces<br/>s3://platform-users/<br/>Research Data<br/>Analysis Results<br/>Isolated Directories]
+            S3R[📁 Research Data<br/>s3://platform-research/<br/>Shared Datasets<br/>Collaborative Projects<br/>Version Control]
+        end
+        
+        subgraph "System Storage"
+            S3B[📁 System Backups<br/>s3://platform-backups/<br/>Automated Snapshots<br/>Disaster Recovery<br/>Model Storage]
+            S3L[📁 Logs & Analytics<br/>s3://platform-logs/<br/>Audit Trails<br/>Performance Data<br/>System Metrics]
         end
     end
 
@@ -137,39 +129,56 @@ graph TB
     
     KONG --> API1
     KONG --> API2
-    KONG --> FAPI
     
-    API1 --> DDB
+    %% Farmer data entry flow
     API1 --> PG
+    API1 --> DDB
+    
+    %% Research API connections
     API2 --> PG
     API2 --> NEO
-    API2 --> CH
-    FAPI --> PG
-    FAPI --> RAG
+    API2 --> RAG
     
+    %% ETL Process - Hybrid Approach
+    PG --> CDC
+    CDC --> KAFKA
+    KAFKA --> NEO
+    AIRFLOW --> PG
+    AIRFLOW --> NEO
+    AIRFLOW --> CHROMA
+    AIRFLOW --> JAPI
+    
+    %% Emilia AI RAG System
+    RAG --> NEO
+    RAG --> CHROMA
+    RAG --> LLM
+    RAG --> DDB
+    
+    %% ChromaDB External Data
+    JAPI --> CHROMA
+    
+    %% Research Environment
     RS --> S3U
     RS --> S3R
     JH --> S3U
     JH --> S3R
+    API2 --> RS
+    API2 --> JH
     
-    RAG --> VDB
-    RAG --> LLM
-    RAG --> REDIS
-    VDB --> S3R
-    
+    %% CI/CD and Monitoring
+    JENKINS --> API1
+    JENKINS --> API2
+    JENKINS --> RAG
     ARGO --> API1
     ARGO --> API2
-    ARGO --> FAPI
+    ARGO --> RAG
     ARGO --> RS
     ARGO --> JH
-    ARGO --> RAG
-    
     PROM --> API1
     PROM --> API2
-    PROM --> FAPI
+    PROM --> RAG
     PROM --> RS
     PROM --> JH
-    PROM --> RAG
 
     %% Styling
     classDef userClass fill:#ff6b6b,stroke:#ff4757,stroke-width:2px,color:#fff
@@ -185,633 +194,822 @@ graph TB
     class U1,U2,U3,U4 userClass
     class FE,MFE frontendClass
     class KONG,ALB gatewayClass
-    class API1,API2,FAPI,ISTIO1 backendClass
-    class RS,JH,GPU researchClass
-    class RAG,VDB,LLM,REDIS aiClass
-    class DDB,PG,NEO,CH dataClass
+    class API1,API2 backendClass
+    class RS,JH researchClass
+    class RAG,CHROMA,LLM,JAPI aiClass
+    class DDB,PG,NEO,CDC dataClass
     class S3U,S3R,S3B,S3L storageClass
-    class ARGO,JENKINS,PROM,GRAF,ELK devopsClass
+    class ARGO,JENKINS,HELM,AIRFLOW,PROM,GRAF,ELK devopsClass
+    class CDC,KAFKA dataClass
 ```
 
-### 1.2 Cluster Organization Strategy
+### 1.2 Simplified Blog Post Architecture Diagram
 
-#### **Cluster 1: Primary Backend Services (EC2-1)**
-- **Purpose**: Core application logic and user-facing APIs
-- **Components**: 
-  - User Backend API (Bun.js) - 3 replicas
-  - Research Backend API (Bun.js) - 3 replicas  
-  - FastAPI Service (Python) - 3 replicas
-  - Istio Service Mesh for traffic management
-- **Resource Allocation**: 
-  - Instance Type: `c5.2xlarge` (8 vCPU, 16 GB RAM)
-  - Auto-scaling: 3-9 replicas per service
-  - Load balancing via Istio and KONG Gateway
+```mermaid
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'primaryColor': '#2563eb',
+    'primaryTextColor': '#fff',
+    'primaryBorderColor': '#1d4ed8',
+    'lineColor': '#3b82f6',
+    'secondaryColor': '#059669',
+    'tertiaryColor': '#dc2626',
+    'background': '#f8fafc',
+    'mainBkg': '#ffffff',
+    'secondBkg': '#f1f5f9'
+  }
+}}%%
 
-#### **Cluster 2: Research Computing (EC2-2)**
-- **Purpose**: Computational environments for researchers and students
-- **Components**:
-  - RStudio Server - 3 pods with persistent volumes
-  - JupyterHub - 3 pods with GPU access
-  - Specialized genomic analysis tools
-- **Resource Allocation**:
-  - Instance Type: `r5.4xlarge` (16 vCPU, 128 GB RAM)
-  - GPU Support: `p3.2xlarge` for ML workloads
-  - Persistent storage via EBS volumes
+flowchart TD
+    A["👥 Users<br>Farmers &amp; Researchers"] L_A_B_0@==> B["🌐 Web &amp; Mobile Apps<br>React + React Native"]
+    B L_B_C_0@==> C["🏗️ Main Server<br>2 APIs + AI + Research Tools"]
+    C L_C_E_0@==> E["💾 PostgreSQL<br>Farm &amp; Animal Data"] & G["🗄️ DynamoDB<br>Chat &amp; Preferences"] & H["☁️ S3<br>Files &amp; Backups"]
+    F["🕸️ Neo4j<br>AI Knowledge Base"] L_C_F_0@==>C
+    I["📚 Research APIs<br>PubMed + Nature"] L_I_J_0@==> J["🔍 ChromaDB<br>via LangChain"] L_J_C_0@==> C
+    D["🔧 DevOps Server<br>CI/CD + Monitoring"] L_D_C_0@==> C
+    E L_E_F_0@== "Real-time ETL" ==> F
 
-#### **Cluster 3: RAG System & AI Processing (EC2-3)**
-- **Purpose**: Emilia AI server-side processing and knowledge management
-- **Components**:
-  - RAG Engine with vector search capabilities
-  - Vector Database (Pinecone/Weaviate)
-  - LLM Gateway for model orchestration
-  - Redis cluster for caching
-- **Resource Allocation**:
-  - Instance Type: `m5.4xlarge` (16 vCPU, 64 GB RAM)
-  - High-memory instances for vector processing
-  - SSD storage for fast vector retrieval
+     A:::userStyle
+     B:::frontendStyle
+     C:::serverStyle
+     E:::dataStyle
+     G:::dataStyle
+     H:::dataStyle
+     F:::dataStyle
+     I:::externalStyle
+     J:::dataStyle
+     D:::devopsStyle
+    classDef userStyle fill:#2563eb,stroke:#1d4ed8,stroke-width:3px,color:#fff
+    classDef frontendStyle fill:#059669,stroke:#047857,stroke-width:3px,color:#fff
+    classDef serverStyle fill:#7c3aed,stroke:#6d28d9,stroke-width:3px,color:#fff
+    classDef devopsStyle fill:#dc2626,stroke:#b91c1c,stroke-width:3px,color:#fff
+    classDef dataStyle fill:#0891b2,stroke:#0e7490,stroke-width:3px,color:#fff
+    classDef externalStyle fill:#6b7280,stroke:#4b5563,stroke-width:3px,color:#fff
 
-#### **Cluster 4: DevOps & Monitoring (EC2-4)**
-- **Purpose**: CI/CD, monitoring, and operational management
-- **Components**:
-  - ArgoCD for GitOps deployment
-  - Prometheus/Grafana monitoring stack
-  - ELK stack for logging
-  - Jenkins for CI/CD pipelines
-- **Resource Allocation**:
-  - Instance Type: `m5.2xlarge` (8 vCPU, 32 GB RAM)
-  - Dedicated monitoring and alerting
+    L_A_B_0@{ animation: fast } 
+    L_B_C_0@{ animation: fast } 
+    L_C_E_0@{ animation: fast } 
+    L_C_G_0@{ animation: fast } 
+    L_C_H_0@{ animation: fast } 
+    L_C_F_0@{ animation: fast } 
+    L_I_J_0@{ animation: fast } 
+    L_J_C_0@{ animation: fast } 
+    L_D_C_0@{ animation: fast } 
+    L_E_F_0@{ animation: fast } 
+```
+
 ---
 
-## 2. Service Mesh Configuration
+## 2. Updated Architecture Components
 
-### 2.1 Istio Service Mesh Implementation
+### 2.1 Server Side EC2 Instance - Consolidated Infrastructure
 
+#### **Primary Backend Cluster**
+- **User Backend API (Bun.js)**
+  - 3 replicas for high availability
+  - Handles user management and authentication
+  - Processes farmer data entry for animal records
+  - Direct integration with PostgreSQL for structured data
+  - Session management via DynamoDB
+
+- **Research API (FastAPI)**
+  - 3 replicas with auto-scaling capabilities
+  - ML/AI processing and genomic analysis
+  - Integration with Emilia AI RAG system
+  - Research operations and data processing
+  - Connection to Neo4j for graph-based queries
+
+#### **Emilia AI Cluster**
+- **RAG Engine**
+  - Vector search and context retrieval
+  - LLM integration for intelligent responses
+  - Knowledge processing from multiple sources
+  - Real-time query processing
+
+- **ChromaDB Vector Database**
+  - Stores vector embeddings from research papers
+  - Integrates with external Journal APIs (PubMed, Nature)
+  - Semantic search capabilities
+  - Research paper knowledge base
+
+- **LLM Gateway**
+  - Model orchestration and management
+  - Response generation and context management
+  - Integration with various AI models
+  - Performance optimization
+
+- **Journal APIs Integration**
+  - PubMed API for medical research papers
+  - Nature API for scientific publications
+  - Automated data extraction and processing
+  - Real-time research data updates
+
+#### **Research Environment Cluster**
+- **RStudio Server**: 3 pods with persistent volumes for statistical analysis
+- **JupyterHub**: 3 pods with GPU access for ML workflows
+- **Integrated S3 access** for user workspaces and shared datasets
+
+### 2.2 Monitoring & CI/CD EC2 Instance
+
+#### **CI/CD Pipeline**
+- **Jenkins**: Build automation, testing pipeline, integration tests
+- **ArgoCD**: GitOps deployment, multi-cluster synchronization, rollback capabilities
+- **Helm Charts**: Package management, configuration templates, deployment automation
+
+#### **Monitoring Stack**
+- **Prometheus**: Metrics collection, alerting rules, service discovery
+- **Grafana**: Visualization dashboards, real-time monitoring, performance analytics
+- **ELK Stack**: Log aggregation, search and analysis, audit logging
+
+---
+
+## 3. Enhanced Data Flow Architecture
+
+### 3.1 Hybrid ETL Architecture Strategy
+
+The platform implements a **hybrid ETL approach** combining real-time CDC streaming with orchestrated batch processing to optimize for both performance and reliability:
+
+#### **Real-Time CDC Stream (Critical Data)**
+- **Purpose**: Immediate synchronization of critical genetic data changes
+- **Technology**: Debezium + Apache Kafka + Neo4j Sink Connector
+- **Latency**: Sub-second data propagation
+- **Use Cases**: Animal pedigree updates, genetic marker changes, breeding records
+
+#### **Apache Airflow Orchestration (Complex Processing)**
+- **Purpose**: Complex data transformations and external API integration
+- **Technology**: Apache Airflow with custom DAGs
+- **Schedule**: Configurable (hourly, daily, event-driven)
+- **Use Cases**: Journal API ingestion, data quality checks, analytics aggregation
+
+### 3.2 Real-Time ETL Process
+
+#### **PostgreSQL to Neo4j CDC Streaming**
 ```yaml
-# Istio Configuration for Multi-Cluster Setup
-apiVersion: install.istio.io/v1alpha1
-kind: IstioOperator
+# Debezium CDC Configuration
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnector
 metadata:
-  name: control-plane
+  name: postgres-source-connector
 spec:
-  values:
-    global:
-      meshID: genetics-platform
-      multiCluster:
-        clusterName: primary-backend
-      network: network1
-  components:
-    pilot:
-      k8s:
-        env:
-          - name: PILOT_ENABLE_WORKLOAD_ENTRY_AUTOREGISTRATION
-            value: true
-          - name: PILOT_ENABLE_CROSS_CLUSTER_WORKLOAD_ENTRY
-            value: true
+  class: io.debezium.connector.postgresql.PostgresConnector
+  tasksMax: 1
+  config:
+    database.hostname: genetics-postgres.cluster-xxx.us-west-2.rds.amazonaws.com
+    database.port: 5432
+    database.user: debezium_user
+    database.password: ${file:/opt/kafka/external-configuration/connector-config/password.txt:password}
+    database.dbname: genetics_platform
+    database.server.name: genetics-postgres
+    table.include.list: public.animals,public.genetic_data,public.pedigree
+    transforms: route
+    transforms.route.type: org.apache.kafka.connect.transforms.RegexRouter
+    transforms.route.regex: ([^.]+)\\.([^.]+)\\.([^.]+)
+    transforms.route.replacement: $3
 ```
 
-### 2.2 Traffic Management Policies
-
-#### **Load Balancing Strategy**
+#### **Neo4j Sink Connector**
 ```yaml
-apiVersion: networking.istio.io/v1beta1
-kind: DestinationRule
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnector
 metadata:
-  name: user-backend-dr
+  name: neo4j-sink-connector
 spec:
-  host: user-backend-api
-  trafficPolicy:
-    loadBalancer:
-      simple: LEAST_CONN
-    connectionPool:
-      tcp:
-        maxConnections: 100
-      http:
-        http1MaxPendingRequests: 50
-        maxRequestsPerConnection: 10
-    circuitBreaker:
-      consecutiveErrors: 3
-      interval: 30s
-      baseEjectionTime: 30s
+  class: streams.kafka.connect.sink.Neo4jSinkConnector
+  tasksMax: 1
+  config:
+    neo4j.server.uri: bolt://neo4j-cluster:7687
+    neo4j.authentication.basic.username: neo4j
+    neo4j.authentication.basic.password: ${file:/opt/kafka/external-configuration/connector-config/neo4j-password.txt:password}
+    neo4j.topic.cypher.animals: |
+      MERGE (a:Animal {id: event.id})
+      SET a.name = event.name,
+          a.breed = event.breed,
+          a.birth_date = event.birth_date,
+          a.updated_at = timestamp()
+    neo4j.topic.cypher.genetic_data: |
+      MATCH (a:Animal {id: event.animal_id})
+      MERGE (g:GeneticData {id: event.id})
+      SET g.markers = event.markers,
+          g.traits = event.traits,
+          g.updated_at = timestamp()
+      MERGE (a)-[:HAS_GENETIC_DATA]->(g)
 ```
 
-#### **Cross-Cluster Communication**
-```yaml
-apiVersion: networking.istio.io/v1beta1
-kind: ServiceEntry
-metadata:
-  name: rag-system-entry
-spec:
-  hosts:
-  - rag-engine.rag-cluster.local
-  ports:
-  - number: 8080
-    name: http
-    protocol: HTTP
-  location: MESH_EXTERNAL
-  resolution: DNS
+#### **Apache Airflow DAG Configuration**
+```python
+# Airflow DAG for External API Integration and Batch Processing
+from airflow import DAG
+from airflow.operators.python_operator import PythonOperator
+from airflow.operators.bash_operator import BashOperator
+from datetime import datetime, timedelta
+import requests
+import chromadb
+
+default_args = {
+    'owner': 'genetics-platform',
+    'depends_on_past': False,
+    'start_date': datetime(2024, 1, 1),
+    'email_on_failure': True,
+    'email_on_retry': False,
+    'retries': 2,
+    'retry_delay': timedelta(minutes=5)
+}
+
+dag = DAG(
+    'genetics_etl_pipeline',
+    default_args=default_args,
+    description='Genetics Platform ETL Pipeline',
+    schedule_interval='@hourly',
+    catchup=False
+)
+
+def fetch_pubmed_data(**context):
+    """Fetch latest research papers from PubMed API"""
+    pubmed_api = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/"
+    search_terms = ["animal genetics", "livestock breeding", "genomic selection"]
+    
+    papers = []
+    for term in search_terms:
+        response = requests.get(f"{pubmed_api}esearch.fcgi", params={
+            'db': 'pubmed',
+            'term': term,
+            'retmax': 50,
+            'format': 'json'
+        })
+        papers.extend(response.json().get('esearchresult', {}).get('idlist', []))
+    
+    return papers
+
+def process_and_embed_papers(**context):
+    """Process papers and store embeddings in ChromaDB"""
+    paper_ids = context['task_instance'].xcom_pull(task_ids='fetch_pubmed_data')
+    
+    # Initialize ChromaDB client
+    client = chromadb.Client()
+    collection = client.get_or_create_collection("research_papers")
+    
+    # Process and embed papers
+    for paper_id in paper_ids[:20]:  # Limit for demo
+        # Fetch paper details and create embeddings
+        # Store in ChromaDB
+        pass
+
+def data_quality_check(**context):
+    """Perform data quality checks on Neo4j data"""
+    # Connect to Neo4j and run quality checks
+    # Check for orphaned nodes, missing relationships, etc.
+    pass
+
+# Define tasks
+fetch_pubmed_task = PythonOperator(
+    task_id='fetch_pubmed_data',
+    python_callable=fetch_pubmed_data,
+    dag=dag
+)
+
+embed_papers_task = PythonOperator(
+    task_id='process_and_embed_papers',
+    python_callable=process_and_embed_papers,
+    dag=dag
+)
+
+quality_check_task = PythonOperator(
+    task_id='data_quality_check',
+    python_callable=data_quality_check,
+    dag=dag
+)
+
+# Set task dependencies
+fetch_pubmed_task >> embed_papers_task >> quality_check_task
 ```
+
+### 3.3 Data Storage Strategy
+
+#### **PostgreSQL - Structured Data**
+- Farm management data
+- Animal records and breeding information
+- User accounts and permissions
+- Research project metadata
+- Structured genetic information
+
+#### **DynamoDB - AI and User Data**
+- Chat conversation history
+- User preferences (language, theme)
+- AI model settings and configurations
+- Research workspace configurations
+- Real-time session data
+
+#### **Neo4j - Graph Relationships**
+- Genetic relationships and pedigree networks
+- Animal lineage and breeding connections
+- Research collaboration networks
+- Knowledge graph for RAG system
+- Complex relationship queries
+
+#### **ChromaDB - Vector Embeddings**
+- Research paper embeddings
+- Scientific literature vectors
+- Semantic search indices
+- External journal data
+- AI knowledge base vectors
 
 ---
 
-## 3. Load Balancing Strategies
+## 4. Emilia AI RAG System Integration
 
-### 3.1 Multi-Layer Load Balancing
-
-#### **Layer 1: AWS Application Load Balancer (ALB)**
-- **SSL Termination**: Handles TLS certificates and encryption
-- **Health Checks**: Monitors backend service health
-- **Geographic Routing**: Routes traffic based on user location
-- **WAF Integration**: Web Application Firewall protection
-
-#### **Layer 2: KONG API Gateway**
-- **Rate Limiting**: Per-user and per-endpoint limits
-- **Authentication**: JWT validation and OAuth integration
-- **Request Transformation**: Header manipulation and payload transformation
-- **Circuit Breaker**: Prevents cascade failures
-
-#### **Layer 3: Istio Service Mesh**
-- **Intelligent Routing**: Based on request headers and user context
-- **Canary Deployments**: Gradual rollout of new versions
-- **Fault Injection**: Testing resilience and error handling
-- **Observability**: Distributed tracing and metrics
-
-### 3.2 Load Balancing Configuration
-
-```yaml
-# KONG Gateway Configuration
-apiVersion: configuration.konghq.com/v1
-kind: KongPlugin
-metadata:
-  name: rate-limiting-plugin
-config:
-  minute: 100
-  hour: 1000
-  policy: local
-  fault_tolerant: true
----
-apiVersion: configuration.konghq.com/v1
-kind: KongPlugin
-metadata:
-  name: circuit-breaker-plugin
-config:
-  max_failures: 5
-  timeout: 60
-  recovery_timeout: 30
-```
-
----
-
-## 4. Inter-Cluster Communication Patterns
-
-### 4.1 Communication Architecture
+### 4.1 Enhanced RAG Architecture
 
 ```mermaid
 sequenceDiagram
     participant U as User
-    participant ALB as AWS ALB
-    participant KONG as KONG Gateway
-    participant API as Backend API
-    participant RAG as RAG System
-    participant RS as RStudio
-    participant S3 as AWS S3
-    participant DB as Databases
+    participant API as Research API
+    participant RAG as RAG Engine
+    participant CHROMA as ChromaDB
+    participant NEO as Neo4j
+    participant LLM as LLM Gateway
+    participant EXT as Journal APIs
 
-    U->>ALB: HTTPS Request
-    ALB->>KONG: Forward Request
-    KONG->>KONG: Authentication & Rate Limiting
-    KONG->>API: Route to Backend
+    U->>API: Research Query
+    API->>RAG: Process Query
     
-    alt Research Query
-        API->>RAG: AI Processing Request
-        RAG->>RAG: Vector Search & LLM
-        RAG-->>API: AI Response
+    par Vector Search
+        RAG->>CHROMA: Semantic Search
+        CHROMA-->>RAG: Relevant Papers
+    and Graph Query
+        RAG->>NEO: Relationship Query
+        NEO-->>RAG: Genetic Connections
     end
     
-    alt Data Analysis
-        API->>RS: Trigger Analysis
-        RS->>S3: Load User Data
-        RS->>DB: Query Research Data
-        RS->>S3: Save Results
-        RS-->>API: Analysis Complete
+    RAG->>LLM: Generate Context
+    LLM->>LLM: Process with AI Model
+    LLM-->>RAG: AI Response
+    
+    opt Real-time Data
+        RAG->>EXT: Fetch Latest Research
+        EXT-->>RAG: Current Papers
+        RAG->>CHROMA: Update Embeddings
     end
     
-    API->>DB: Data Operations
-    API->>S3: File Operations
-    API-->>KONG: Response
-    KONG-->>ALB: Forward Response
-    ALB-->>U: HTTPS Response
+    RAG-->>API: Complete Response
+    API-->>U: Research Results
 ```
 
-### 4.2 Service Discovery and Registration
+### 4.2 ChromaDB Configuration
 
-#### **Consul Service Discovery**
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: consul-config
-data:
-  consul.json: |
-    {
-      "datacenter": "genetics-platform",
-      "data_dir": "/consul/data",
-      "log_level": "INFO",
-      "server": true,
-      "bootstrap_expect": 3,
-      "bind_addr": "0.0.0.0",
-      "client_addr": "0.0.0.0",
-      "retry_join": ["consul-0.consul", "consul-1.consul", "consul-2.consul"],
-      "ui_config": {
-        "enabled": true
-      },
-      "connect": {
-        "enabled": true
-      }
+```python
+# ChromaDB Setup for Journal Integration
+import chromadb
+from chromadb.config import Settings
+
+# Initialize ChromaDB client
+client = chromadb.Client(Settings(
+    chroma_db_impl="duckdb+parquet",
+    persist_directory="/data/chromadb"
+))
+
+# Create collection for research papers
+research_collection = client.create_collection(
+    name="research_papers",
+    metadata={
+        "description": "Scientific research papers from PubMed and Nature",
+        "embedding_function": "sentence-transformers/all-MiniLM-L6-v2"
     }
+)
+
+# Journal API integration
+class JournalDataProcessor:
+    def __init__(self):
+        self.pubmed_api = PubMedAPI()
+        self.nature_api = NatureAPI()
+        
+    async def fetch_and_embed_papers(self, query: str, limit: int = 100):
+        # Fetch from PubMed
+        pubmed_papers = await self.pubmed_api.search(query, limit=limit//2)
+        
+        # Fetch from Nature
+        nature_papers = await self.nature_api.search(query, limit=limit//2)
+        
+        # Process and embed
+        all_papers = pubmed_papers + nature_papers
+        embeddings = self.generate_embeddings(all_papers)
+        
+        # Store in ChromaDB
+        research_collection.add(
+            documents=[paper.abstract for paper in all_papers],
+            metadatas=[paper.metadata for paper in all_papers],
+            ids=[paper.id for paper in all_papers]
+        )
 ```
 
-### 4.3 Cross-Cluster Networking
+---
 
-#### **VPC Peering Configuration**
+## 5. Infrastructure Specifications
+
+### 5.1 EC2 Instance Configuration
+
+#### **Server Side EC2 Instance**
+- **Instance Type**: `r5.4xlarge` (16 vCPU, 128 GB RAM)
+- **Storage**: 500GB EBS GP3 SSD
+- **Network**: Enhanced networking enabled
+- **Auto Scaling**: 1-3 instances based on load
+- **Availability Zone**: Multi-AZ deployment
+
+#### **Monitoring & CI/CD EC2 Instance**
+- **Instance Type**: `m5.2xlarge` (8 vCPU, 32 GB RAM)
+- **Storage**: 200GB EBS GP3 SSD
+- **Network**: Standard networking
+- **Backup**: Automated EBS snapshots
+- **Availability Zone**: Single AZ with backup strategy
+
+### 5.2 Database Configuration
+
+#### **PostgreSQL RDS**
 ```yaml
-# Terraform configuration for VPC peering
-resource "aws_vpc_peering_connection" "cluster_peering" {
-  count       = length(var.cluster_vpcs)
-  peer_vpc_id = var.cluster_vpcs[count.index]
-  vpc_id      = var.main_vpc_id
-  auto_accept = true
+# RDS Configuration
+resource "aws_rds_cluster" "genetics_postgres" {
+  cluster_identifier      = "genetics-platform-postgres"
+  engine                 = "aurora-postgresql"
+  engine_version         = "14.9"
+  availability_zones     = ["us-west-2a", "us-west-2b"]
+  database_name          = "genetics_platform"
+  master_username        = "postgres"
+  backup_retention_period = 7
+  preferred_backup_window = "07:00-09:00"
+  
+  db_cluster_parameter_group_name = aws_rds_cluster_parameter_group.genetics_postgres.name
+  
+  tags = {
+    Name = "genetics-platform-postgres"
+    Environment = "production"
+  }
+}
+```
+
+#### **DynamoDB Configuration**
+```yaml
+# DynamoDB Tables
+resource "aws_dynamodb_table" "chat_history" {
+  name           = "emilia-chat-history"
+  billing_mode   = "PAY_PER_REQUEST"
+  hash_key       = "user_id"
+  range_key      = "timestamp"
+
+  attribute {
+    name = "user_id"
+    type = "S"
+  }
+
+  attribute {
+    name = "timestamp"
+    type = "N"
+  }
+
+  ttl {
+    attribute_name = "expires_at"
+    enabled        = true
+  }
 
   tags = {
-    Name = "genetics-platform-peering-${count.index}"
+    Name = "emilia-chat-history"
+    Environment = "production"
   }
 }
 
-resource "aws_route" "cluster_routes" {
-  count                     = length(var.cluster_vpcs)
-  route_table_id            = var.route_table_ids[count.index]
-  destination_cidr_block    = var.peer_cidr_blocks[count.index]
-  vpc_peering_connection_id = aws_vpc_peering_connection.cluster_peering[count.index].id
-}
-```
----
+resource "aws_dynamodb_table" "user_preferences" {
+  name           = "user-preferences"
+  billing_mode   = "PAY_PER_REQUEST"
+  hash_key       = "user_id"
 
-## 5. AWS S3 Integration Strategy
+  attribute {
+    name = "user_id"
+    type = "S"
+  }
 
-### 5.1 User-Specific Workspace Design
-
-#### **S3 Bucket Structure**
-```
-s3://genetics-platform-storage/
-├── users/
-│   ├── {user-id}/
-│   │   ├── workspace/
-│   │   │   ├── notebooks/
-│   │   │   ├── datasets/
-│   │   │   ├── results/
-│   │   │   └── temp/
-│   │   ├── shared/
-│   │   └── backups/
-├── research/
-│   ├── public-datasets/
-│   ├── collaborative-projects/
-│   └── reference-genomes/
-├── system/
-│   ├── logs/
-│   ├── monitoring/
-│   └── backups/
-└── ai-knowledge/
-    ├── embeddings/
-    ├── documents/
-    └── models/
-```
-
-### 5.2 Access Control and Security
-
-#### **IAM Policies for User Isolation**
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "s3:GetObject",
-        "s3:PutObject",
-        "s3:DeleteObject"
-      ],
-      "Resource": [
-        "arn:aws:s3:::genetics-platform-storage/users/${aws:userid}/*"
-      ]
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "s3:ListBucket"
-      ],
-      "Resource": [
-        "arn:aws:s3:::genetics-platform-storage"
-      ],
-      "Condition": {
-        "StringLike": {
-          "s3:prefix": [
-            "users/${aws:userid}/*"
-          ]
-        }
-      }
-    }
-  ]
+  tags = {
+    Name = "user-preferences"
+    Environment = "production"
+  }
 }
 ```
 
-### 5.3 S3 Integration with Kubernetes
-
-#### **CSI Driver Configuration**
+#### **Neo4j Configuration**
 ```yaml
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
+# Neo4j Deployment
+apiVersion: apps/v1
+kind: StatefulSet
 metadata:
-  name: s3-csi-driver
-provisioner: s3.csi.aws.com
-parameters:
-  mounter: geesefs
-  options: "--memory-limit 1000 --dir-mode 0755 --file-mode 0644"
-reclaimPolicy: Delete
-volumeBindingMode: Immediate
-```
-
-#### **Persistent Volume Claims**
-```yaml
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: user-workspace-pvc
+  name: neo4j-cluster
 spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 100Gi
-  storageClassName: s3-csi-driver
+  serviceName: neo4j
+  replicas: 3
+  selector:
+    matchLabels:
+      app: neo4j
+  template:
+    metadata:
+      labels:
+        app: neo4j
+    spec:
+      containers:
+      - name: neo4j
+        image: neo4j:5.13-enterprise
+        ports:
+        - containerPort: 7474
+        - containerPort: 7687
+        env:
+        - name: NEO4J_AUTH
+          value: "neo4j/genetics-platform-password"
+        - name: NEO4J_dbms_mode
+          value: "CORE"
+        - name: NEO4J_causal__clustering_minimum__core__cluster__size__at__formation
+          value: "3"
+        volumeMounts:
+        - name: neo4j-data
+          mountPath: /data
+  volumeClaimTemplates:
+  - metadata:
+      name: neo4j-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 100Gi
 ```
 
 ---
 
-## 6. Comprehensive Recommendations
+## 6. Security and Compliance
 
-### 6.1 Architecture Strengths
+### 6.1 Network Security
 
-#### **✅ Positive Aspects**
-1. **Clear Separation of Concerns**: Each cluster has a specific purpose and responsibility
-2. **Scalability Design**: Multiple replicas and auto-scaling capabilities
-3. **Technology Alignment**: Bun.js and FastAPI provide good performance characteristics
-4. **AI Integration**: Dedicated RAG cluster for specialized AI processing
-5. **Storage Strategy**: S3 integration provides scalable and cost-effective storage
+#### **VPC Configuration**
+```yaml
+# VPC and Security Groups
+resource "aws_vpc" "genetics_platform" {
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_hostnames = true
+  enable_dns_support   = true
 
-### 6.2 Critical Architecture Gaps
+  tags = {
+    Name = "genetics-platform-vpc"
+  }
+}
 
-#### **🚨 High Priority Issues**
+resource "aws_security_group" "backend_sg" {
+  name_prefix = "genetics-backend-"
+  vpc_id      = aws_vpc.genetics_platform.id
 
-1. **Single Points of Failure**
-   - **Issue**: Single EC2 instances per cluster create availability risks
-   - **Impact**: Complete service outage if an instance fails
-   - **Recommendation**: Implement multi-AZ deployment with at least 2 instances per cluster
+  ingress {
+    from_port   = 3000
+    to_port     = 3000
+    protocol    = "tcp"
+    cidr_blocks = [aws_vpc.genetics_platform.cidr_block]
+  }
 
-2. **Network Security Concerns**
-   - **Issue**: Inter-cluster communication security not clearly defined
-   - **Impact**: Potential data breaches and unauthorized access
-   - **Recommendation**: Implement VPC security groups, NACLs, and service mesh mTLS
+  ingress {
+    from_port   = 8000
+    to_port     = 8000
+    protocol    = "tcp"
+    cidr_blocks = [aws_vpc.genetics_platform.cidr_block]
+  }
 
-3. **Database Architecture Mismatch**
-   - **Issue**: DynamoDB + PostgreSQL doesn't align with documented multi-database strategy
-   - **Impact**: Missing graph database for pedigree relationships, no analytics database
-   - **Recommendation**: Add Neo4j for genetic relationships and ClickHouse for analytics
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
-4. **Monitoring and Observability Gaps**
-   - **Issue**: Limited cross-cluster monitoring and distributed tracing
-   - **Impact**: Difficult troubleshooting and performance optimization
-   - **Recommendation**: Implement comprehensive observability stack with Jaeger tracing
-
-### 6.3 Infrastructure Optimization Recommendations
-
-#### **🏗️ Enhanced Architecture Design**
-
-```mermaid
-graph TB
-    subgraph "Multi-AZ Deployment"
-        subgraph "AZ-1a"
-            EC2_1A[Backend Cluster<br/>Primary]
-            EC2_2A[Research Cluster<br/>Primary]
-        end
-        
-        subgraph "AZ-1b"
-            EC2_1B[Backend Cluster<br/>Secondary]
-            EC2_2B[Research Cluster<br/>Secondary]
-        end
-        
-        subgraph "AZ-1c"
-            EC2_3C[RAG Cluster<br/>Primary]
-            EC2_4C[DevOps Cluster<br/>Primary]
-        end
-    end
-    
-    subgraph "Managed Services"
-        RDS_MULTI[RDS Multi-AZ<br/>PostgreSQL]
-        DDB_GLOBAL[DynamoDB<br/>Global Tables]
-        EKS[Amazon EKS<br/>Managed Kubernetes]
-    end
-    
-    EC2_1A -.-> EC2_1B
-    EC2_2A -.-> EC2_2B
-    EC2_1A --> RDS_MULTI
-    EC2_1B --> RDS_MULTI
-    EC2_1A --> DDB_GLOBAL
-    EC2_1B --> DDB_GLOBAL
+  tags = {
+    Name = "genetics-backend-sg"
+  }
+}
 ```
 
-#### **🔧 Specific Improvements**
+### 6.2 Data Encryption
 
-1. **Replace Self-Managed K8s with Amazon EKS**
-   ```yaml
-   # EKS Cluster Configuration
-   apiVersion: eksctl.io/v1alpha5
-   kind: ClusterConfig
-   metadata:
-     name: genetics-platform
-     region: us-west-2
-   
-   nodeGroups:
-   - name: backend-nodes
-     instanceType: c5.2xlarge
-     desiredCapacity: 6
-     minSize: 3
-     maxSize: 12
-     availabilityZones: ["us-west-2a", "us-west-2b"]
-   
-   - name: research-nodes
-     instanceType: r5.4xlarge
-     desiredCapacity: 4
-     minSize: 2
-     maxSize: 8
-     availabilityZones: ["us-west-2a", "us-west-2b"]
-   
-   - name: ai-nodes
-     instanceType: m5.4xlarge
-     desiredCapacity: 4
-     minSize: 2
-     maxSize: 8
-     availabilityZones: ["us-west-2c"]
-   ```
+#### **Encryption at Rest**
+- RDS: AES-256 encryption enabled
+- DynamoDB: Server-side encryption with AWS KMS
+- S3: SSE-S3 encryption for all buckets
+- EBS: Encrypted volumes with AWS KMS
 
-2. **Implement Database Clustering**
-   ```yaml
-   # PostgreSQL RDS Configuration
-   resource "aws_rds_cluster" "genetics_db" {
-     cluster_identifier      = "genetics-platform-cluster"
-     engine                 = "aurora-postgresql"
-     engine_version         = "13.7"
-     availability_zones     = ["us-west-2a", "us-west-2b", "us-west-2c"]
-     database_name          = "genetics_platform"
-     master_username        = "postgres"
-     backup_retention_period = 7
-     preferred_backup_window = "07:00-09:00"
-     
-     db_cluster_parameter_group_name = aws_rds_cluster_parameter_group.genetics_db.name
-     
-     tags = {
-       Name = "genetics-platform-cluster"
-     }
-   }
-   ```
-
-3. **Enhanced Security Configuration**
-   ```yaml
-   # Network Security Groups
-   resource "aws_security_group" "backend_sg" {
-     name_prefix = "genetics-backend-"
-     vpc_id      = var.vpc_id
-   
-     ingress {
-       from_port   = 3000
-       to_port     = 3000
-       protocol    = "tcp"
-       cidr_blocks = [var.vpc_cidr]
-     }
-   
-     egress {
-       from_port   = 0
-       to_port     = 0
-       protocol    = "-1"
-       cidr_blocks = ["0.0.0.0/0"]
-     }
-   
-     tags = {
-       Name = "genetics-backend-sg"
-     }
-   }
-   ```
-
-### 6.4 Cost Optimization Strategy
-
-#### **💰 Cost Analysis and Recommendations**
-
-1. **Current Estimated Monthly Costs**
-   - EC2 Instances (4 x c5.2xlarge): ~$1,200
-   - RDS PostgreSQL (Multi-AZ): ~$400
-   - DynamoDB (On-demand): ~$200-500
-   - S3 Storage (1TB): ~$25
-   - **Total Estimated**: ~$1,825-2,125/month
-
-2. **Optimized Cost Structure**
-   - EKS Managed Nodes (Reserved): ~$800
-   - Aurora Serverless v2: ~$200-400
-   - DynamoDB (Provisioned): ~$150
-   - S3 with Intelligent Tiering: ~$20
-   - **Optimized Total**: ~$1,170-1,370/month
-   - **Savings**: ~$655-755/month (35-40% reduction)
-
-### 6.5 Alternative Architecture Recommendations
-
-#### **🚀 Cloud-Native Alternative**
-
-```mermaid
-graph TB
-    subgraph "Serverless Architecture"
-        ALB[AWS ALB]
-        APIGW[API Gateway]
-        
-        subgraph "Compute"
-            LAMBDA1[Lambda Functions<br/>User API]
-            LAMBDA2[Lambda Functions<br/>Research API]
-            FARGATE[ECS Fargate<br/>Long-running Tasks]
-        end
-        
-        subgraph "AI Services"
-            BEDROCK[Amazon Bedrock<br/>LLM Services]
-            OPENSEARCH[OpenSearch<br/>Vector Search]
-            SAGEMAKER[SageMaker<br/>ML Endpoints]
-        end
-        
-        subgraph "Data Services"
-            AURORA[Aurora Serverless<br/>PostgreSQL]
-            DYNAMODB[DynamoDB]
-            NEPTUNE[Neptune<br/>Graph Database]
-        end
-    end
-    
-    ALB --> APIGW
-    APIGW --> LAMBDA1
-    APIGW --> LAMBDA2
-    LAMBDA1 --> AURORA
-    LAMBDA1 --> DYNAMODB
-    LAMBDA2 --> NEPTUNE
-    LAMBDA2 --> BEDROCK
-    FARGATE --> SAGEMAKER
-```
-
-#### **Benefits of Serverless Approach**
-- **Cost Efficiency**: Pay only for actual usage
-- **Auto-scaling**: Automatic scaling based on demand
-- **Reduced Operational Overhead**: Managed services reduce maintenance
-- **High Availability**: Built-in redundancy and fault tolerance
+#### **Encryption in Transit**
+- TLS 1.3 for all API communications
+- mTLS for service-to-service communication
+- VPN connections for administrative access
+- SSL/TLS for database connections
 
 ---
 
-## 7. Implementation Roadmap
+## 7. Performance and Scalability
 
-### 7.1 Phase 1: Foundation (Months 1-2)
-- [ ] Set up VPC with multi-AZ configuration
-- [ ] Deploy EKS clusters with proper node groups
-- [ ] Implement basic CI/CD pipeline with ArgoCD
-- [ ] Set up monitoring with Prometheus/Grafana
+### 7.1 Auto-Scaling Configuration
 
-### 7.2 Phase 2: Core Services (Months 3-4)
-- [ ] Deploy backend APIs with proper load balancing
-- [ ] Implement authentication and authorization
-- [ ] Set up database clusters and data migration
-- [ ] Configure S3 storage with proper access controls
+#### **Kubernetes HPA**
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: user-api-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: user-backend-api
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+```
 
-### 7.3 Phase 3: Advanced Features (Months 5-6)
-- [ ] Deploy RAG system and AI components
-- [ ] Implement research computing environments
-- [ ] Set up comprehensive monitoring and alerting
-- [ ] Perform security audits and penetration testing
+### 7.2 Caching Strategy
 
-### 7.4 Phase 4: Optimization (Months 7-8)
-- [ ] Performance tuning and optimization
-- [ ] Cost optimization and right-sizing
-- [ ] Disaster recovery testing
+#### **Redis Configuration**
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-cluster
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+```
+
+---
+
+## 8. Monitoring and Observability
+
+### 8.1 Comprehensive Monitoring Stack
+
+#### **Prometheus Configuration**
+```yaml
+# Prometheus ServiceMonitor
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: genetics-platform-monitor
+spec:
+  selector:
+    matchLabels:
+      app: genetics-platform
+  endpoints:
+  - port: metrics
+    interval: 30s
+    path: /metrics
+```
+
+#### **Grafana Dashboards**
+- Application performance metrics
+- Database performance and connections
+- AI system response times
+- User activity and engagement
+- Infrastructure resource utilization
+
+### 8.2 Alerting Rules
+
+```yaml
+# Prometheus Alerting Rules
+groups:
+- name: genetics-platform-alerts
+  rules:
+  - alert: HighCPUUsage
+    expr: cpu_usage_percent > 80
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High CPU usage detected"
+      description: "CPU usage is above 80% for more than 5 minutes"
+
+  - alert: DatabaseConnectionHigh
+    expr: postgres_connections > 80
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "High database connections"
+      description: "PostgreSQL connections are above 80"
+```
+
+---
+
+## 9. Cost Optimization
+
+### 9.1 Estimated Monthly Costs
+
+#### **Current Architecture Costs**
+- **Server Side EC2** (r5.4xlarge): ~$600/month
+- **Monitoring EC2** (m5.2xlarge): ~$300/month
+- **RDS Aurora PostgreSQL**: ~$400/month
+- **DynamoDB** (Pay-per-request): ~$200/month
+- **Neo4j** (Self-hosted): ~$100/month
+- **S3 Storage** (1TB): ~$25/month
+- **Data Transfer**: ~$50/month
+- **Total Estimated**: ~$1,675/month
+
+#### **Cost Optimization Strategies**
+1. **Reserved Instances**: 30-40% savings on EC2 costs
+2. **Spot Instances**: For non-critical workloads
+3. **S3 Intelligent Tiering**: Automatic cost optimization
+4. **DynamoDB On-Demand**: Pay only for actual usage
+5. **CloudWatch Logs**: Retention policy optimization
+
+---
+
+## 10. Implementation Roadmap
+
+### 10.1 Phase 1: Infrastructure Setup (Weeks 1-2)
+- [ ] Deploy VPC and networking components
+- [ ] Set up EC2 instances with proper security groups
+- [ ] Configure RDS PostgreSQL cluster
+- [ ] Set up DynamoDB tables
+- [ ] Implement basic monitoring
+
+### 10.2 Phase 2: Core Services (Weeks 3-4)
+- [ ] Deploy User Backend API (Bun.js)
+- [ ] Deploy Research API (FastAPI)
+- [ ] Set up Neo4j cluster
+- [ ] Implement CDC streaming from PostgreSQL to Neo4j
+- [ ] Configure S3 storage and access policies
+
+### 10.3 Phase 3: AI Integration (Weeks 5-6)
+- [ ] Deploy ChromaDB vector database
+- [ ] Implement Journal APIs integration
+- [ ] Set up Emilia AI RAG system
+- [ ] Configure LLM Gateway
+- [ ] Test AI query processing
+
+### 10.4 Phase 4: DevOps & Monitoring (Weeks 7-8)
+- [ ] Set up Jenkins CI/CD pipeline
+- [ ] Deploy ArgoCD for GitOps
+- [ ] Configure Helm charts
+- [ ] Implement comprehensive monitoring
+- [ ] Set up alerting and notifications
+
+### 10.5 Phase 5: Testing & Optimization (Weeks 9-10)
+- [ ] Performance testing and optimization
+- [ ] Security audit and penetration testing
+- [ ] Load testing and scaling verification
 - [ ] Documentation and training
+- [ ] Go-live preparation
 
 ---
 
-## 8. Conclusion
+## 11. Conclusion
 
-The proposed multi-tier architecture provides a solid foundation for the Animal Genetics Research Platform, but requires significant enhancements to meet production requirements. Key recommendations include:
+The updated simplified architecture provides a more streamlined and cost-effective solution while maintaining all core functionality. Key improvements include:
 
-1. **Adopt managed services** (EKS, Aurora, etc.) for better reliability and reduced operational overhead
-2. **Implement multi-AZ deployment** to eliminate single points of failure
-3. **Enhance security** with proper network segmentation and encryption
-4. **Add comprehensive monitoring** for better observability and troubleshooting
-5. **Consider serverless alternatives** for cost optimization and scalability
+### 11.1 Architecture Benefits
+1. **Simplified Infrastructure**: Reduced from 4 to 2 EC2 instances
+2. **Enhanced AI Integration**: ChromaDB with Journal APIs for comprehensive research data
+3. **Real-time Data Flow**: CDC streaming for immediate data synchronization
+4. **Cost Optimization**: ~30% reduction in infrastructure costs
+5. **Improved Maintainability**: Consolidated services reduce operational complexity
 
-The enhanced architecture will provide better scalability, reliability, and cost-effectiveness while maintaining the core functionality required for the genetics research platform.
+### 11.2 Technical Advantages
+- **Streamlined APIs**: Two focused APIs instead of three overlapping services
+- **Advanced RAG System**: Neo4j + ChromaDB for comprehensive knowledge processing
+- **Real-time ETL**: Immediate data synchronization between systems
+- **External Data Integration**: Automatic research paper ingestion and processing
+- **Comprehensive Monitoring**: Full observability across all components
+
+### 11.3 Future Scalability
+The architecture is designed to scale horizontally with:
+- Auto-scaling groups for EC2 instances
+- Database read replicas for increased throughput
+- CDN integration for global content delivery
+- Microservices migration path for further decomposition
+
+This updated architecture provides a solid foundation for the Animal Genetics Research Platform with enhanced AI capabilities, simplified operations, and optimized costs.
