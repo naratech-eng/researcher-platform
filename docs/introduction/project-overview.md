@@ -162,4 +162,4 @@ For more detailed information, please refer to:
 - [Product Vision](../prd/product-vision.md): Strategic vision and goals
 - [User Personas](../prd/user-personas.md): Detailed user profiles and needs
 - [Functional Requirements](../prd/functional-requirements.md): Specific platform capabilities
-- [Architecture Overview](../architecture/overview.md): Technical design and components
+- [Architecture Overview](../architecture/arch-overview.md): Technical design and components
