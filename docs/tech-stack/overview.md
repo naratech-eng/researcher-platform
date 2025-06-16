@@ -84,7 +84,7 @@ graph TD
 | Technology | Purpose | Rationale |
 |------------|---------|-----------|
 | PostgreSQL AWS RDS | Primary relational database | Handles complex relationships in animal genetics data |
-| DynamoDB AWS | Document database | Stores flexible research data and unstructured content |
+| DynamoDB AWS | Document database | Stores flexible research data and unstructured content (see [AWS Access Setup Guide](aws-access-setup.md)) |
 | Neo4j | Graph database | Manages complex pedigree and genetic relationship networks |
 | ChromaDB | Vector database | Enables semantic search and retrieval for AI applications |
 | Redis | In-memory data store | Provides caching and session management |

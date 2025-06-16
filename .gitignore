@@ -184,6 +184,11 @@ docs/.DS_Store
 # Project specific files
 animal-genetics-prd.md
 docs.zip
+ui-ux-design-prompt.md
+# Bun
+bun.lockb
+.bunfig.toml
+bun.lock
 .cursor/
 .env.example
 .roo/
@@ -205,7 +210,8 @@ yarn-debug.log*
 yarn-error.log*
 dev-debug.log
 # Dependency directories
-node_modules/
+node_modules
+.bun
 # Environment variables
 # Editor directories and files
 .idea
