@@ -1,0 +1,165 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: DynamoDB schema for Animal Genetics Platform (Users + supporting tables)
+
+Metadata:
+  LastModified: "2025-06-17"
+  Author: "NaraTech"
+  Version: "1.0.0"
+  
+Parameters:
+  TableBillingMode:
+    Type: String
+    Default: PAY_PER_REQUEST
+    AllowedValues: [PAY_PER_REQUEST]
+    Description: Use on-demand billing
+
+Resources:
+
+#####################################################
+# NOTE: Users table already exists and is managed separately
+#####################################################
+# The Users table was created manually and we're only adding GSIs via AWS CLI
+# This section is commented out to prevent conflicts
+# 
+# UsersTablePitr:
+#   Type: AWS::DynamoDB::Table
+#   DeletionPolicy: Retain
+#   UpdateReplacePolicy: Retain
+#   Properties:
+#     TableName: Users
+#     BillingMode: !Ref TableBillingMode
+#     AttributeDefinitions:
+#       - AttributeName: UserId
+#         AttributeType: S
+#       - AttributeName: Email
+#         AttributeType: S
+#       - AttributeName: Role
+#         AttributeType: S
+#     KeySchema:
+#       - AttributeName: UserId
+#         KeyType: HASH
+#     GlobalSecondaryIndexes:
+#       - IndexName: GSI1_UserByEmail
+#         KeySchema:
+#           - AttributeName: Email
+#             KeyType: HASH
+#         Projection:
+#           ProjectionType: ALL
+#       - IndexName: GSI2_ByRole
+#         KeySchema:
+#           - AttributeName: Role
+#             KeyType: HASH
+#           - AttributeName: UserId
+#             KeyType: RANGE
+#         Projection:
+#           ProjectionType: KEYS_ONLY
+#     PointInTimeRecoverySpecification:
+#       PointInTimeRecoveryEnabled: true
+#     Tags:
+#       - Key: Project
+#         Value: GeneticsPlatform
+
+#####################################################
+#  1. UserIdentities
+#####################################################
+  UserIdentities:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: UserIdentities
+      BillingMode: !Ref TableBillingMode
+      AttributeDefinitions:
+        - AttributeName: IdentityId
+          AttributeType: S
+        - AttributeName: UserId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: IdentityId
+          KeyType: HASH
+        - AttributeName: UserId
+          KeyType: RANGE
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+#####################################################
+#  2. ChatSessions
+#####################################################
+  ChatSessions:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ChatSessions
+      BillingMode: !Ref TableBillingMode
+      AttributeDefinitions:
+        - AttributeName: UserId
+          AttributeType: S
+        - AttributeName: SessionId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: UserId
+          KeyType: HASH
+        - AttributeName: SessionId
+          KeyType: RANGE
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+#####################################################
+#  3. ChatMessages (wide log table)
+#####################################################
+  ChatMessages:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ChatMessages
+      BillingMode: !Ref TableBillingMode
+      AttributeDefinitions:
+        - AttributeName: SessionId
+          AttributeType: S
+        - AttributeName: Timestamp
+          AttributeType: N
+      KeySchema:
+        - AttributeName: SessionId
+          KeyType: HASH
+        - AttributeName: Timestamp
+          KeyType: RANGE
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+#####################################################
+#  4. NotificationInbox
+#####################################################
+  NotificationInbox:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: NotificationInbox
+      BillingMode: !Ref TableBillingMode
+      AttributeDefinitions:
+        - AttributeName: UserId
+          AttributeType: S
+        - AttributeName: NotifId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: UserId
+          KeyType: HASH
+        - AttributeName: NotifId
+          KeyType: RANGE
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+#####################################################
+#  5. UserWorkspaces
+#####################################################
+  UserWorkspaces:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: UserWorkspaces
+      BillingMode: !Ref TableBillingMode
+      AttributeDefinitions:
+        - AttributeName: UserId
+          AttributeType: S
+        - AttributeName: WorkspaceId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: UserId
+          KeyType: HASH
+        - AttributeName: WorkspaceId
+          KeyType: RANGE
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
