@@ -1,0 +1,13 @@
+# Required Python libraries for the ETL process
+
+# For connecting to MySQL (the source database)
+mysql-connector-python
+
+# For connecting to PostgreSQL (the destination database)
+psycopg2-binary
+
+# For data manipulation and transformation
+pandas
+
+# For loading environment variables (for database credentials)
+python-dotenv

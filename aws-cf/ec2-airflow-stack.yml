@@ -1,0 +1,123 @@
+# aws-cf/ec2-airflow-stack.yml
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  This CloudFormation template deploys a general-purpose EC2 instance running
+  Ubuntu 24.04 LTS with Docker and Docker Compose pre-installed. It is intended 
+  for hosting various containerized applications like Jenkins, Airflow, etc. 
+  Access is secured via SSM Session Manager.
+
+Parameters:
+  LatestAmiId:
+    Type: String
+    Default: 'ami-0d1b5a8c13042c939'
+    Description: The specific Ubuntu Server 24.04 LTS (Noble) AMI ID for us-east-2.
+
+  InstanceType:
+    Description: EC2 instance type for the general-purpose server.
+    Type: String
+    Default: t3.medium
+    AllowedValues:
+      - t2.micro
+      - t3.medium
+      - t3.large
+
+  SubnetIds:
+    Type: 'List<AWS::EC2::Subnet::Id>'
+    Description: A list of at least one subnet ID for the Auto Scaling group.
+
+Resources:
+  EC2InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [ec2.amazonaws.com]
+            Action: [sts:AssumeRole]
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref EC2InstanceRole
+
+  ProjectSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: 'Allow common web traffic for various applications'
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0
+
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: !Sub ${AWS::StackName}-launch-template
+      LaunchTemplateData:
+        InstanceType: !Ref InstanceType
+        IamInstanceProfile:
+          Arn: !GetAtt EC2InstanceProfile.Arn
+        ImageId: !Ref LatestAmiId
+        SecurityGroupIds:
+          - !GetAtt ProjectSecurityGroup.GroupId
+        BlockDeviceMappings:
+          - DeviceName: /dev/sda1
+            Ebs:
+              VolumeSize: 10
+              VolumeType: gp3
+              DeleteOnTermination: true
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash -xe
+            # Wait for any automatic apt process to finish to avoid conflicts
+            while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || fuser /var/lib/apt/lists/lock >/dev/null 2>&1; do
+               echo "Waiting for other apt-get instances to exit..."
+               sleep 5
+            done
+
+            # Update and install essential packages
+            apt-get update -y
+            DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io docker-compose-plugin bash-completion unzip zip tree build-essential git curl wget vim
+
+            # Add both ubuntu and ssm-user to the docker group
+            usermod -aG docker ubuntu || true
+            usermod -aG docker ssm-user || true
+            
+            # Start and enable Docker service
+            systemctl start docker
+            systemctl enable docker
+
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier: !Ref SubnetIds
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
+      MinSize: '1'
+      MaxSize: '1'
+      DesiredCapacity: '1'
+      Tags:
+        - Key: Name
+          Value: General-Purpose-Server
+          PropagateAtLaunch: true
+
+Outputs:
+  AutoScalingGroupName:
+    Description: Name of the Auto Scaling Group.
+    Value: !Ref AutoScalingGroup
