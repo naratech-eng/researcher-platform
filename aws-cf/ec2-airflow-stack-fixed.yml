@@ -1,0 +1,308 @@
+# aws-cf/ec2-airflow-stack.yml
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  This CloudFormation template deploys a general-purpose EC2 instance running
+  Ubuntu 24.04 LTS with Docker and Docker Compose pre-installed. It is intended 
+  for hosting various containerized applications like Jenkins, Airflow, etc. 
+  Access is secured via SSM Session Manager.
+
+Parameters:
+  InstanceType:
+    Description: EC2 instance type for the application servers.
+    Type: String
+    Default: t3.medium
+    AllowedValues:
+      - t2.micro
+      - t3.small
+      - t3.medium
+      - t3.large
+
+  LatestAmiId:
+    Type: String
+    Default: 'ami-0d1b5a8c13042c939'
+    Description: The specific Ubuntu Server 24.04 LTS (Noble) AMI ID for us-east-2.
+
+  ExistingEFSFileSystemId:
+    Description: (Optional) ID of an existing EFS file system to reuse. If left blank, a new one is created.
+    Type: String
+    Default: ""
+
+Conditions:
+  CreateEFS:
+    !Equals [!Ref ExistingEFSFileSystemId, ""]
+
+Resources:
+  # --- Networking --- #
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-VPC"
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-PublicSubnet"
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-IGW"
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-PublicRouteTable"
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref PublicRouteTable
+
+  # --- Security Groups --- #
+  EC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for EC2 instances
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-EC2SecurityGroup"
+
+  EFSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for EFS
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 2049
+          ToPort: 2049
+          SourceSecurityGroupId: !Ref EC2SecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-EFSSecurityGroup"
+
+  # --- EFS --- #
+  EFSFileSystem:
+    Type: AWS::EFS::FileSystem
+    Condition: CreateEFS
+    DeletionPolicy: Retain
+    Properties:
+      PerformanceMode: generalPurpose
+      Encrypted: true
+      FileSystemTags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-EFS"
+
+  MountTarget:
+    Type: AWS::EFS::MountTarget
+    Condition: CreateEFS
+    Properties:
+      FileSystemId: !Ref EFSFileSystem
+      SubnetId: !Ref PublicSubnet
+      SecurityGroups:
+        - !Ref EFSSecurityGroup
+
+  # --- IAM --- #
+  EC2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore'
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-EC2Role"
+
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref EC2Role
+
+  # --- EC2 --- #
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: !Sub "${AWS::StackName}-LaunchTemplate"
+      LaunchTemplateData:
+        ImageId: !Ref LatestAmiId
+        InstanceType: !Ref InstanceType
+        IamInstanceProfile:
+          Name: !Ref EC2InstanceProfile
+        SecurityGroupIds:
+          - !Ref EC2SecurityGroup
+        BlockDeviceMappings:
+          - DeviceName: /dev/sda1
+            Ebs:
+              VolumeSize: 10
+              VolumeType: gp3
+              DeleteOnTermination: true
+        UserData:
+          Fn::Base64:
+            Fn::Sub:
+              - |
+                #!/bin/bash -ex
+                # Redirect all output to a log file for debugging
+                exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+
+                echo "--- Starting UserData Script ---"
+
+                # --- System Update and Dependency Installation ---
+                apt-get update -y
+                # Install dependencies for Docker and EFS
+                apt-get install -y apt-transport-https ca-certificates curl software-properties-common git
+
+                echo "--- Installing Docker ---"
+                # Add Docker's official GPG key
+                install -m 0755 -d /etc/apt/keyrings
+                curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+                chmod a+r /etc/apt/keyrings/docker.asc
+
+                # Add the Docker repository to Apt sources
+                echo \
+                  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+                  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+                  tee /etc/apt/sources.list.d/docker.list > /dev/null
+                apt-get update -y
+
+                # Install Docker Engine
+                apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+                # Add ubuntu user to docker group
+                usermod -aG docker ubuntu
+
+                # Set Docker socket permissions for non-root access
+                chmod 666 /var/run/docker.sock
+
+                echo "--- Installing AWS CLI v2 ---"
+                # Install AWS CLI v2 from the official AWS installer
+                curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+                apt-get install -y unzip
+                unzip awscliv2.zip
+                ./aws/install
+                rm -rf aws awscliv2.zip
+
+                echo "--- Installing Build Dependencies ---"
+                # Install build dependencies for amazon-efs-utils
+                apt-get install -y build-essential binutils pkg-config libssl-dev libfuse-dev fuse
+
+                echo "--- Building and Installing EFS Mount Helper ---"
+                git clone https://github.com/aws/efs-utils /tmp/efs-utils
+                cd /tmp/efs-utils
+                ./build-deb.sh
+                apt-get -y install ./build/amazon-efs-utils*deb
+                cd /
+
+                echo "--- Mounting EFS Filesystem ---"
+                EFS_ID="${EfsId}"
+                EFS_DIR="/mnt/efs/data"
+
+                # Check if the EFS ID is available
+                if [ -z "$EFS_ID" ]; then
+                  echo "EFS_ID is empty. Cannot mount."
+                  exit 1
+                fi
+
+                # Create mount directory
+                mkdir -p $EFS_DIR
+
+                # Check if already mounted
+                if ! grep -qs "$EFS_DIR" /proc/mounts; then
+                  echo "Mounting EFS: $EFS_ID to $EFS_DIR"
+                  # Use the EFS mount helper
+                  mount -t efs -o tls "$EFS_ID:/" "$EFS_DIR"
+                  # Make the mount persistent
+                  echo "$EFS_ID:/ $EFS_DIR efs _netdev,tls 0 0" >> /etc/fstab
+                else
+                    echo "EFS is already mounted."
+                fi
+
+                echo "--- Creating Application Directories on EFS ---"
+                # This structure is safe to re-run
+                mkdir -p $EFS_DIR/airflow/dags $EFS_DIR/airflow/logs $EFS_DIR/airflow/plugins
+                chown -R ubuntu:ubuntu $EFS_DIR/airflow
+                # Create .env file for Airflow user ID
+                echo "AIRFLOW_UID=$(id -u ubuntu)" > $EFS_DIR/airflow/.env
+
+                echo "--- Creating Symlink for Easy Access ---"
+                ln -sfn $EFS_DIR/airflow /home/ubuntu/airflow
+                chown -R ubuntu:ubuntu /home/ubuntu/airflow
+
+                echo "--- UserData Script Finished Successfully ---"
+              - { EfsId: !If [CreateEFS, !Ref EFSFileSystem, !Ref ExistingEFSFileSystemId] }
+
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier: [!Ref PublicSubnet]
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
+      MinSize: 1
+      MaxSize: 1
+      DesiredCapacity: 1
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-Instance"
+          PropagateAtLaunch: true
+
+Outputs:
+  AutoScalingGroupName:
+    Description: Name of the Auto Scaling Group
+    Value: !Ref AutoScalingGroup
+
+  EFSFileSystemId:
+    Description: ID of the EFS File System
+    Value: !If [CreateEFS, !Ref EFSFileSystem, !Ref ExistingEFSFileSystemId]
