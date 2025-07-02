@@ -135,6 +135,8 @@ Resources:
       FileSystemTags:
         - Key: Name
           Value: !Sub "${AWS::StackName}-AirflowData"
+        - Key: AirflowCluster
+          Value: !Ref AWS::StackName
     DeletionPolicy: Retain # IMPORTANT: This prevents data loss if the stack is deleted
 
   EFSMountTarget:
@@ -162,96 +164,61 @@ Resources:
               VolumeType: gp3
               DeleteOnTermination: true
         UserData:
-          Fn::Base64: !Sub |
-            #!/bin/bash -ex
-            # Redirect all output to a log file for debugging
-            exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+          Fn::Base64:
+            Fn::Sub:
+              - |
+                #!/bin/bash -xe
+                exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
 
-            echo "--- Starting UserData Script ---"
+                echo "--- Starting Generic Host UserData Script ---"
 
-            # --- System Update and Dependency Installation ---
-            apt-get update -y
-            # Install dependencies for Docker and EFS
-            apt-get install -y apt-transport-https ca-certificates curl software-properties-common git
-            
-            # Install build dependencies for EFS mount helper
-            echo "--- Installing Build Dependencies ---"
-            apt-get install -y build-essential binutils pkg-config libssl-dev libfuse-dev fuse unzip cargo
+                # Install dependencies
+                echo "--- Installing Dependencies ---"
+                apt-get update
+                apt-get install -y build-essential binutils pkg-config libssl-dev libfuse-dev fuse unzip cargo
 
-            echo "--- Installing Docker ---"
-            # Add Docker's official GPG key
-            install -m 0755 -d /etc/apt/keyrings
-            curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-            chmod a+r /etc/apt/keyrings/docker.asc
+                echo "--- Installing Docker ---"
+                install -m 0755 -d /etc/apt/keyrings
+                curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+                chmod a+r /etc/apt/keyrings/docker.asc
+                echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+                apt-get update
+                apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+                chmod 666 /var/run/docker.sock
 
-            # Add the Docker repository to Apt sources
-            echo \
-              "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-              $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-              tee /etc/apt/sources.list.d/docker.list > /dev/null
-            apt-get update -y
+                echo "--- Installing AWS CLI v2 ---"
+                curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+                unzip awscliv2.zip
+                ./aws/install
+                rm -f awscliv2.zip
 
-            # Install Docker packages
-            apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+                echo "--- Installing Amazon EFS Mount Helper ---"
+                git clone https://github.com/aws/efs-utils
+                cd efs-utils
+                ./build-deb.sh
+                apt-get -y install ./build/amazon-efs-utils*deb
+                cd ..
 
-            echo "--- Configuring Docker Permissions ---"
-            # Add ubuntu user to the docker group
-            usermod -aG docker ubuntu
-            # Set permissions on the Docker socket to allow ssm-user access without a race condition
-            chmod 666 /var/run/docker.sock
+                echo "--- Mounting EFS Filesystem: ${EfsId} ---"
+                EFS_DIR="/mnt/efs/data"
+                mkdir -p $EFS_DIR
+                mount -t efs -o tls ${EfsId}:/ $EFS_DIR
+                echo "${EfsId}:/ $EFS_DIR efs _netdev,tls 0 0" >> /etc/fstab
 
-            # Build dependencies already installed above
+                echo "--- Creating Airflow Directories for Data Persistence ---"
+                AIRFLOW_EFS_DIR="/mnt/efs/data/airflow"
+                mkdir -p $AIRFLOW_EFS_DIR/{dags,logs,plugins,config,postgres-db}
+                chown -R ubuntu:ubuntu $AIRFLOW_EFS_DIR
 
-            echo "--- Installing AWS CLI v2 (required for EFS utils) ---"
-            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
-            unzip /tmp/awscliv2.zip -d /tmp
-            /tmp/aws/install
-            rm -rf /tmp/aws /tmp/awscliv2.zip
+                # Set ownership for the PostgreSQL data directory (Postgres container runs as user 999)
+                chown -R 999:999 $AIRFLOW_EFS_DIR/postgres-db
 
-            echo "--- Installing EFS Mount Helper ---"
-            git clone https://github.com/aws/efs-utils /tmp/efs-utils
-            cd /tmp/efs-utils
-            ./build-deb.sh
-            apt-get -y install ./build/amazon-efs-utils*deb
-            cd /
+                echo "--- Creating Symlink for Easy Access ---"
+                ln -sfn $AIRFLOW_EFS_DIR /home/ubuntu/airflow
+                chown -R ubuntu:ubuntu /home/ubuntu/airflow
 
-            echo "--- Mounting EFS Filesystem ---"
-            # Hardcoded EFS ID for now to bypass the CloudFormation substitution issue
-            EFS_ID=fs-080bda99a6d6b7c6f
-            EFS_DIR="/mnt/efs/data"
-
-            # Check if the EFS ID is available
-            if [ -z "$EFS_ID" ]; then
-              echo "EFS_ID is empty. Cannot mount."
-              exit 1
-            fi
-
-            # Create the mount point directory
-            mkdir -p $EFS_DIR
-
-            # Check if already mounted to prevent duplicate entries in /etc/fstab
-            if ! grep -qs "$EFS_DIR" /proc/mounts; then
-              echo "Mounting EFS filesystem $EFS_ID to $EFS_DIR using EFS mount helper..."
-              # Use the EFS mount helper
-              mount -t efs -o tls "$EFS_ID:/" "$EFS_DIR"
-              # Make the mount persistent
-              echo "$EFS_ID:/ $EFS_DIR efs _netdev,tls 0 0" >> /etc/fstab
-            else
-                echo "EFS is already mounted."
-            fi
-
-            echo "--- Creating Application Directories on EFS ---"
-            # This structure is safe to re-run
-            mkdir -p $EFS_DIR/airflow/dags $EFS_DIR/airflow/logs $EFS_DIR/airflow/plugins
-            chown -R ubuntu:ubuntu $EFS_DIR/airflow
-            # Create .env file for Airflow user ID
-            echo "AIRFLOW_UID=$(id -u ubuntu)" > $EFS_DIR/airflow/.env
-
-            echo "--- Creating Symlink for Easy Access ---"
-            ln -sfn $EFS_DIR/airflow /home/ubuntu/airflow
-            chown -R ubuntu:ubuntu /home/ubuntu/airflow
-
-            echo "--- UserData Script Finished Successfully ---"
+                echo "--- UserData Script Finished Successfully ---"
+              - EfsId: !If [CreateEFS, !Ref EFSFileSystem, !Ref ExistingEFSFileSystemId]
 
   AutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup

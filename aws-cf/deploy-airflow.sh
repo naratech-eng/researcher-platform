@@ -1,36 +1,46 @@
 #!/bin/bash
 
-# This script deploys a self-contained, scalable EC2 environment using CloudFormation.
+# This script deploys the generic EC2 host stack and manages EFS persistence.
 
 set -e # Exit immediately if a command exits with a non-zero status.
 
 # --- Configuration ---
-STACK_NAME="general-purpose-ec2-stack"
+STACK_NAME="ec2-airflow-from-scratch"
 TEMPLATE_FILE="ec2-airflow-stack.yml"
 REGION="us-east-2"
+EFS_TAG_KEY="AirflowCluster"
+EFS_TAG_VALUE=$STACK_NAME
 
-# --- IMPORTANT ---
-# After the first successful deployment, find your EFS File System ID
-# in the CloudFormation stack's "Outputs" tab and paste it here.
-# This ensures you reuse the same EFS and preserve your data on subsequent deployments.
-# Example: EXISTING_EFS_ID="fs-0123456789abcdef0"
-EXISTING_EFS_ID="fs-080bda99a6d6b7c6f"
+# --- EFS Discovery Logic ---
+echo "Searching for existing EFS filesystem with tag ${EFS_TAG_KEY}=${EFS_TAG_VALUE}..."
 
-PARAMS=()
-if [ -n "$EXISTING_EFS_ID" ]; then
-  PARAMS+=("ParameterKey=ExistingEFSFileSystemId,ParameterValue=$EXISTING_EFS_ID")
+FILESYSTEM_ID=$(aws efs describe-file-systems --region $REGION --query "FileSystems[?Tags[?Key=='$EFS_TAG_KEY' && Value=='$EFS_TAG_VALUE']].FileSystemId" --output text)
+
+# --- Deployment Logic ---
+
+# Construct the base command
+CMD="aws cloudformation deploy \
+    --template-file $TEMPLATE_FILE \
+    --stack-name $STACK_NAME \
+    --region $REGION \
+    --no-fail-on-empty-changeset \
+    --capabilities CAPABILITY_IAM"
+
+# If an EFS filesystem was found, pass it as a parameter
+if [ -n "$FILESYSTEM_ID" ]; then
+    echo "Found existing EFS filesystem: $FILESYSTEM_ID. Reusing it."
+    CMD="$CMD --parameter-overrides ExistingEFSFileSystemId=$FILESYSTEM_ID"
+else
+    echo "No existing EFS filesystem found. A new one will be created by CloudFormation."
 fi
 
-# --- Deployment ---
-echo "Deploying CloudFormation stack: $STACK_NAME..."
+echo "\nExecuting deployment command..."
 
-aws cloudformation deploy \
-  --stack-name "$STACK_NAME" \
-  --template-file "$TEMPLATE_FILE" \
-  --region "$REGION" \
-  --capabilities CAPABILITY_IAM \
-  --no-fail-on-empty-changeset \
-  ${PARAMS:+--parameter-overrides ${PARAMS[@]}}
+# Execute the command
+eval $CMD
+
+# --- Post-Deployment Instructions ---
+echo "\nDeployment complete. If you updated the Launch Template, remember to start an instance refresh in the Auto Scaling Group console to apply the changes."
 
 if [ $? -ne 0 ]; then
     echo "CloudFormation stack deployment failed."
