@@ -11,7 +11,7 @@ Parameters:
   InstanceType:
     Description: EC2 instance type for the application servers.
     Type: String
-    Default: t3.medium
+    Default: t3.large
     AllowedValues:
       - t2.micro
       - t3.small
@@ -110,20 +110,51 @@ Resources:
   EC2SecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: "Allows inbound web, Airflow, and SSH traffic. Allows all outbound."
+      GroupDescription: "Allows inbound web, Airflow, Keycloak, and SSH traffic."
       VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-EC2-SG"
       SecurityGroupIngress:
         - { IpProtocol: tcp, FromPort: 80, ToPort: 80, CidrIp: 0.0.0.0/0 }
         - { IpProtocol: tcp, FromPort: 443, ToPort: 443, CidrIp: 0.0.0.0/0 }
         - { IpProtocol: tcp, FromPort: 8080, ToPort: 8080, CidrIp: 0.0.0.0/0 }
+        - { IpProtocol: tcp, FromPort: 8081, ToPort: 8081, CidrIp: 0.0.0.0/0 }
 
   EFSSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: "Allows NFS traffic from EC2 instances"
+      GroupDescription: "Allows NFS traffic from the EC2 instance security group."
       VpcId: !Ref VPC
-      SecurityGroupIngress:
-        - { IpProtocol: tcp, FromPort: 2049, ToPort: 2049, SourceSecurityGroupId: !Ref EC2SecurityGroup }
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-EFS-SG"
+
+  # --- Security Group Rules (decoupled to prevent deletion deadlocks) --- #
+  AllowAllOutboundEgressRule:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      GroupId: !Ref EC2SecurityGroup
+      IpProtocol: -1 # -1 means all protocols
+      CidrIp: 0.0.0.0/0
+
+  EC2ToEFSEgressRule:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      GroupId: !Ref EC2SecurityGroup
+      IpProtocol: tcp
+      FromPort: 2049
+      ToPort: 2049
+      DestinationSecurityGroupId: !Ref EFSSecurityGroup
+
+  EFSToEC2IngressRule:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref EFSSecurityGroup
+      IpProtocol: tcp
+      FromPort: 2049
+      ToPort: 2049
+      SourceSecurityGroupId: !Ref EC2SecurityGroup
 
   # --- Persistent Storage (EFS) --- #
   EFSFileSystem:
@@ -160,7 +191,7 @@ Resources:
         BlockDeviceMappings:
           - DeviceName: /dev/sda1
             Ebs:
-              VolumeSize: 10
+              VolumeSize: 30
               VolumeType: gp3
               DeleteOnTermination: true
         UserData:
@@ -205,6 +236,16 @@ Resources:
                 mount -t efs -o tls ${EfsId}:/ $EFS_DIR
                 echo "${EfsId}:/ $EFS_DIR efs _netdev,tls 0 0" >> /etc/fstab
 
+                echo "--- Creating Keycloak Directory for Data Persistence ---"
+                KEYCLOAK_EFS_DIR="/mnt/efs/data/keycloak"
+                mkdir -p $KEYCLOAK_EFS_DIR
+                chown 1000:1000 $KEYCLOAK_EFS_DIR
+                chmod 770 $KEYCLOAK_EFS_DIR
+
+                echo "--- Creating Symlink for Keycloak ---"
+                ln -sfn $KEYCLOAK_EFS_DIR /home/ubuntu/keycloak
+                chown -R ubuntu:ubuntu /home/ubuntu/keycloak
+
                 echo "--- Creating Airflow Directories for Data Persistence ---"
                 AIRFLOW_EFS_DIR="/mnt/efs/data/airflow"
                 mkdir -p $AIRFLOW_EFS_DIR/{dags,logs,plugins,config,postgres-db}
@@ -222,6 +263,11 @@ Resources:
 
   AutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        MaxBatchSize: '1'
+        MinInstancesInService: '0'
+        PauseTime: 'PT2M' # Give instance 2 minutes to boot before stack update is marked complete
     Properties:
       VPCZoneIdentifier: [!Ref PublicSubnet]
       LaunchTemplate:

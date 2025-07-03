@@ -77,33 +77,14 @@ Connect to your new EC2 instance to perform the initial Airflow setup. This conf
     Create a file named `docker-compose.yml` (e.g., with `nano docker-compose.yml`) and paste the following content. This file defines the Airflow services and is configured to use the EFS directories for persistence.
 
     ```yaml
-    version: '3.8'
-    x-airflow-common:
-      image: apache/airflow:3.0.2
-      env_file:
-        - ./.env
-      environment:
-        &airflow-common-env
-        AIRFLOW__CORE__EXECUTOR: LocalExecutor
-        AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
-        AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY}
-        AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
-        AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
-        AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth'
-      volumes:
-        - ./dags:/opt/airflow/dags
-        - ./logs:/opt/airflow/logs
-        - ./plugins:/opt/airflow/plugins
-        - ./config:/opt/airflow/config
-
     services:
       postgres:
         image: postgres:13
         container_name: postgres
         environment:
-          - POSTGRES_USER=airflow
-          - POSTGRES_PASSWORD=airflow
-          - POSTGRES_DB=airflow
+          POSTGRES_USER: airflow
+          POSTGRES_PASSWORD: airflow
+          POSTGRES_DB: airflow
         volumes:
           - ./postgres-db:/var/lib/postgresql/data
         healthcheck:
@@ -112,33 +93,50 @@ Connect to your new EC2 instance to perform the initial Airflow setup. This conf
           retries: 5
 
       airflow-init:
-        <<: *x-airflow-common
+        image: apache/airflow:3.0.2
         container_name: airflow_init
+        env_file: .env
+        environment:
+          AIRFLOW__CORE__EXECUTOR: LocalExecutor
+          AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+          AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY}
+          AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+          AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+          AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth'
+        volumes:
+          - ./dags:/opt/airflow/dags
+          - ./logs:/opt/airflow/logs
+          - ./plugins:/opt/airflow/plugins
+          - ./config:/opt/airflow/config
         depends_on:
           postgres:
             condition: service_healthy
         command: >
-          bash -c "
-            airflow db init &&
-            airflow users create \
-              --username airflow \
-              --firstname Admin \
-              --lastname User \
-              --role Admin \
-              --email admin@example.com \
-              --password airflow
-          "
+          bash -c "airflow db migrate"
 
       airflow-webserver:
-        <<: *x-airflow-common
+        image: apache/airflow:3.0.2
         container_name: airflow_webserver
         restart: always
+        env_file: .env
+        environment:
+          AIRFLOW__CORE__EXECUTOR: LocalExecutor
+          AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+          AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY}
+          AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+          AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+          AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth'
+        volumes:
+          - ./dags:/opt/airflow/dags
+          - ./logs:/opt/airflow/logs
+          - ./plugins:/opt/airflow/plugins
+          - ./config:/opt/airflow/config
+        ports:
+          - "8080:8080"
         depends_on:
           airflow-init:
             condition: service_completed_successfully
-        ports:
-          - "8080:8080"
-        command: webserver
+        command: api-server
         healthcheck:
           test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
           interval: 30s
@@ -146,9 +144,22 @@ Connect to your new EC2 instance to perform the initial Airflow setup. This conf
           retries: 5
 
       airflow-scheduler:
-        <<: *x-airflow-common
+        image: apache/airflow:3.0.2
         container_name: airflow_scheduler
         restart: always
+        env_file: .env
+        environment:
+          AIRFLOW__CORE__EXECUTOR: LocalExecutor
+          AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+          AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY}
+          AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+          AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+          AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth'
+        volumes:
+          - ./dags:/opt/airflow/dags
+          - ./logs:/opt/airflow/logs
+          - ./plugins:/opt/airflow/plugins
+          - ./config:/opt/airflow/config
         depends_on:
           airflow-init:
             condition: service_completed_successfully
@@ -157,17 +168,16 @@ Connect to your new EC2 instance to perform the initial Airflow setup. This conf
 
 6.  **Create the Environment File**
 
-    Create a file named `.env` to store necessary environment variables.
-
-    First, set the `AIRFLOW_UID` to match the current user (`ubuntu`). This ensures files created by the container match the host user's permissions.
+    Create the `.env` file with both the `AIRFLOW_UID` and a generated Fernet key in a single operation:
     ```bash
-    echo "AIRFLOW_UID=$(id -u)" > .env
+    echo "AIRFLOW_UID=$(id -u)" > .env && echo -n "AIRFLOW__CORE__FERNET_KEY=" >> .env && docker run --rm apache/airflow:3.0.2 python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())' | tr -d '\n' >> .env && echo "" >> .env
     ```
-
-    Next, generate a Fernet key for encrypting connections and add it to the `.env` file.
-    ```bash
-    echo "AIRFLOW__CORE__FERNET_KEY=$(docker run --rm apache/airflow:3.0.2 bash -c 'airflow-fernet')" >> .env
-    ```
+    
+    This command:
+    1. Creates the `.env` file with the correct UID
+    2. Appends the `AIRFLOW__CORE__FERNET_KEY=` prefix (without a newline)
+    3. Generates the Fernet key and removes any newlines with `tr`
+    4. Adds a final newline for proper file formatting
 
     Your final `.env` file should look like this (the Fernet key will be different):
     ```
@@ -175,16 +185,45 @@ Connect to your new EC2 instance to perform the initial Airflow setup. This conf
     AIRFLOW__CORE__FERNET_KEY=...your_generated_key...
     ```
 
-7.  **Initialize the Airflow Database and User:**
-    This command uses Docker Compose to run a one-time initialization service. It sets up the PostgreSQL database and creates the default admin user (`airflow`/`airflow`).
+7.  **Verify Docker Compose v2 Installation:**
+    The Airflow `docker-compose.yml` file uses YAML anchors which require Docker Compose v2. Verify it's installed and properly configured:
+    ```bash
+    # Check Docker Compose version
+    docker compose version
+    ```
+
+    If you see an error or if it shows v1.x.x, you need to ensure Docker Compose v2 is properly set up:
+    ```bash
+    # Make sure the Docker Compose plugin is installed
+    sudo apt-get update && sudo apt-get install -y docker-compose-plugin
+    
+    # Create a symbolic link if needed
+    sudo ln -sf /usr/libexec/docker/cli-plugins/docker-compose /usr/bin/docker-compose
+    ```
+
+8.  **Reset and Initialize the Airflow Environment:**
+    If you need to reset your environment or are experiencing issues, you can completely tear down the existing containers and volumes before initializing:
+    ```bash
+    docker compose down --volumes --remove-orphans
+    docker compose up --build airflow-init
+    ```
+    
+    If you're setting up for the first time or don't need to reset, simply run:
     ```bash
     docker compose up airflow-init
     ```
+    
+    This command initializes the Airflow database. You should see "Database migrating done!" when it completes successfully.
 
-8.  **Launch all Airflow services:**
+9.  **Launch all Airflow services:**
     This command starts the Airflow webserver, scheduler, and other components in the background.
     ```bash
-    docker compose up -d
+    docker compose up --build -d
+    ```
+    
+    If you want to see the logs in real-time instead of running in detached mode, use:
+    ```bash
+    docker compose up --build
     ```
 
 ---
