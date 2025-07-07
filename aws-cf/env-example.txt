@@ -1,0 +1,18 @@
+# Example environment variables for EIP DDNS Lambda function
+# Copy this file to .env and fill in your Namecheap DDNS details
+
+# Namecheap Dynamic DNS Password (from Advanced DNS settings)
+DDNS_PASSWORD=99682caa687a480a9f3125a4f6b89d25
+
+# Your domain name
+DOMAIN=naratech.ca
+
+# Subdomain/host (use @ for root domain, or specify subdomain like 'etl')
+HOST=etl
+
+# Instructions:
+# 1. Log into your Namecheap account
+# 2. Go to Domain List > Manage > Advanced DNS
+# 3. Enable Dynamic DNS and copy the password
+# 4. Set DNS TTL to 60 seconds or lower in Namecheap for faster updates
+# 5. Copy this file to .env in the same directory

@@ -24,7 +24,7 @@ CMD="aws cloudformation deploy \
     --stack-name $STACK_NAME \
     --region $REGION \
     --no-fail-on-empty-changeset \
-    --capabilities CAPABILITY_IAM"
+    --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM"
 
 # If an EFS filesystem was found, pass it as a parameter
 if [ -n "$FILESYSTEM_ID" ]; then
@@ -36,17 +36,27 @@ fi
 
 echo "\nExecuting deployment command..."
 
-# Execute the command
-eval $CMD
-
-# --- Post-Deployment Instructions ---
-echo "\nDeployment complete. If you updated the Launch Template, remember to start an instance refresh in the Auto Scaling Group console to apply the changes."
-
-if [ $? -ne 0 ]; then
-    echo "CloudFormation stack deployment failed."
-    echo "To see the events, run: aws cloudformation describe-stack-events --stack-name $STACK_NAME --region $REGION"
+# Execute the command and check for failure
+if ! eval $CMD; then
+    echo "--------------------------------------------------"
+    echo "CloudFormation deployment failed. Fetching events..."
+    echo "--------------------------------------------------"
+    # Fetch and display the most recent stack events to find the error
+    aws cloudformation describe-stack-events --stack-name "$STACK_NAME" --region "$REGION" --max-items 20
     exit 1
 fi
 
-echo "CloudFormation stack deployment initiated successfully."
+echo "\nCloudFormation stack deployment successful!"
+
+# Deploy Lambda function code
+echo "\n=== Deploying Lambda Function Code ==="
+if [ -f "package-lambda.sh" ]; then
+    ./package-lambda.sh
+else
+    echo "Warning: package-lambda.sh not found. Lambda function will use placeholder code."
+fi
+
+# --- Post-Deployment Instructions ---
+echo "\n=== Deployment Complete ==="
+echo "If you updated the Launch Template, remember to start an instance refresh in the Auto Scaling Group console to apply the changes."
 echo "You can monitor the progress in the AWS CloudFormation console."

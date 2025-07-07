@@ -89,6 +89,15 @@ Resources:
       SubnetId: !Ref PublicSubnet
       RouteTableId: !Ref PublicRouteTable
 
+  # --- Static Elastic IP for Persistent Public Address --- #
+  StaticElasticIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-Static-EIP"
+
   # --- Security --- #
   EC2InstanceRole:
     Type: AWS::IAM::Role
@@ -106,6 +115,40 @@ Resources:
     Type: AWS::IAM::InstanceProfile
     Properties:
       Roles: [!Ref EC2InstanceRole]
+
+  # --- EIP Manager Lambda Role --- #
+  EIPManagerLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-EIPManager-Role"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: EIPManagerPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:DescribeInstances
+                  - ec2:AssociateAddress
+                  - ec2:DisassociateAddress
+                  - ec2:DescribeAddresses
+                  - ec2:ReleaseAddress
+                  - autoscaling:DescribeAutoScalingGroups
+                  - autoscaling:DescribeAutoScalingInstances
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"
 
   EC2SecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -261,6 +304,26 @@ Resources:
                 echo "--- UserData Script Finished Successfully ---"
               - EfsId: !If [CreateEFS, !Ref EFSFileSystem, !Ref ExistingEFSFileSystemId]
 
+  # --- EIP Manager Lambda Function --- #
+  EIPManagerLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-EIP-DDNS-Handler"
+      Runtime: python3.11
+      Role: !GetAtt EIPManagerLambdaRole.Arn
+      Handler: eip_ddns_lambda.lambda_handler
+      Code:
+        ZipFile: |
+          def lambda_handler(event, context):
+              return {"status": "placeholder - deploy with external zip"}
+      Timeout: 60
+      MemorySize: 128
+      Environment:
+        Variables:
+          ALLOCATION_ID: !GetAtt StaticElasticIP.AllocationId
+          ASG_NAME: !Ref AutoScalingGroup
+          STACK_NAME: !Ref AWS::StackName
+
   AutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     UpdatePolicy:
@@ -281,6 +344,59 @@ Resources:
           Value: !Sub "${AWS::StackName}-Instance"
           PropagateAtLaunch: true
 
+  # --- CloudWatch Events for EIP Management --- #
+  ASGLaunchEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub "${AWS::StackName}-EC2-Launch-Event"
+      Description: "Triggers Lambda when an EC2 instance enters the running state"
+      EventPattern:
+        source:
+          - "aws.ec2"
+        detail-type:
+          - "EC2 Instance State-change Notification"
+        detail:
+          state:
+            - "running"
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt EIPManagerLambdaFunction.Arn
+          Id: "EIPManagerLaunchTarget"
+
+  ASGTerminateEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub "${AWS::StackName}-EC2-Terminate-Event"
+      Description: "Triggers Lambda when an EC2 instance is terminated"
+      EventPattern:
+        source:
+          - "aws.ec2"
+        detail-type:
+          - "EC2 Instance State-change Notification"
+        detail:
+          state:
+            - "terminated"
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt EIPManagerLambdaFunction.Arn
+          Id: "EIPManagerTerminateTarget"
+
+  LambdaInvokePermissionLaunch:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref EIPManagerLambdaFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt ASGLaunchEventRule.Arn
+
+  LambdaInvokePermissionTerminate:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref EIPManagerLambdaFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt ASGTerminateEventRule.Arn
+
 Outputs:
   VPCId:
     Description: ID of the newly created VPC.
@@ -294,3 +410,20 @@ Outputs:
   AutoScalingGroupName:
     Description: Name of the Auto Scaling Group.
     Value: !Ref AutoScalingGroup
+
+  EIPAllocationId:
+    Description: Allocation ID of the static Elastic IP.
+    Value: !GetAtt StaticElasticIP.AllocationId
+
+  StaticElasticIP:
+    Description: The persistent static IP address for Airflow and Keycloak services.
+    Value: !Ref StaticElasticIP
+  AirflowURL:
+    Description: Airflow Web UI URL (persistent)
+    Value: !Sub "http://${StaticElasticIP}:8080/"
+  KeycloakURL:
+    Description: Keycloak Web UI URL (persistent)
+    Value: !Sub "http://${StaticElasticIP}:8081/"
+  LambdaFunctionName:
+    Description: Name of the EIP Manager Lambda function for code deployment.
+    Value: !Ref EIPManagerLambdaFunction
