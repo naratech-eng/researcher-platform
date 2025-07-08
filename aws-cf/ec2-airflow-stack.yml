@@ -5,7 +5,7 @@ Description: >
   This CloudFormation template deploys a general-purpose EC2 instance running
   Ubuntu 24.04 LTS with Docker and Docker Compose pre-installed. It is intended 
   for hosting various containerized applications like Jenkins, Airflow, etc. 
-  Access is secured via SSM Session Manager.
+  Access is secured via SSM Session Manager and HTTPS via CloudFront.
 
 Parameters:
   InstanceType:
@@ -27,10 +27,30 @@ Parameters:
     Description: (Optional) ID of an existing EFS file system to reuse. If left blank, a new one is created.
     Type: String
     Default: ""
+    
+  SSLCertificateArn:
+    Type: String
+    Description: ARN of the SSL certificate in us-east-1 region (required for CloudFront)
+    Default: ""
+    
+  DomainName:
+    Type: String
+    Description: Domain name for Airflow and Keycloak access (e.g., etl.naratech.ca)
+    Default: "etl.naratech.ca"
+    
+  EnableCloudFront:
+    Type: String
+    Description: Enable CloudFront distribution for HTTPS access
+    Default: "false"
+    AllowedValues: ["true", "false"]
 
 Conditions:
   CreateEFS:
     !Equals [!Ref ExistingEFSFileSystemId, ""]
+  CreateCloudFront:
+    !Equals [!Ref EnableCloudFront, "true"]
+  HasCertificate:
+    !Not [!Equals [!Ref SSLCertificateArn, ""]]
 
 Resources:
   # --- Networking --- #
@@ -396,6 +416,114 @@ Resources:
       Action: lambda:InvokeFunction
       Principal: events.amazonaws.com
       SourceArn: !GetAtt ASGTerminateEventRule.Arn
+      
+  # --- CloudFront Distribution for HTTPS Access --- #
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Condition: CreateCloudFront
+    Properties:
+      DistributionConfig:
+        Aliases:
+          - !Ref DomainName
+        Origins:
+          - Id: AirflowOrigin
+            DomainName: etl-backend.naratech.ca
+            CustomOriginConfig:
+              HTTPPort: 8080
+              HTTPSPort: 443
+              OriginProtocolPolicy: http-only
+          - Id: KeycloakOrigin
+            DomainName: etl-backend.naratech.ca
+            CustomOriginConfig:
+              HTTPPort: 8081
+              HTTPSPort: 443
+              OriginProtocolPolicy: http-only
+        # CloudFront DistributionConfig (latest AWS best practices)
+        DefaultCacheBehavior:
+          TargetOriginId: AirflowOrigin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+            - PUT
+            - POST
+            - PATCH
+            - DELETE
+          CachedMethods:
+            - GET
+            - HEAD
+          ForwardedValues:
+            QueryString: true
+            Cookies:
+              Forward: all
+            Headers:
+              - Host
+              - Origin
+              - Authorization
+          DefaultTTL: 0
+          MinTTL: 0
+          MaxTTL: 0
+        CacheBehaviors:
+          - PathPattern: "/airflow/*"
+            TargetOriginId: AirflowOrigin
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+              - PUT
+              - POST
+              - PATCH
+              - DELETE
+            CachedMethods:
+              - GET
+              - HEAD
+            ForwardedValues:
+              QueryString: true
+              Cookies:
+                Forward: all
+              Headers:
+                - Host
+                - Origin
+                - Authorization
+            DefaultTTL: 0
+            MinTTL: 0
+            MaxTTL: 0
+          - PathPattern: "/keycloak/*"
+            TargetOriginId: KeycloakOrigin
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+              - PUT
+              - POST
+              - PATCH
+              - DELETE
+            CachedMethods:
+              - GET
+              - HEAD
+            ForwardedValues:
+              QueryString: true
+              Cookies:
+                Forward: all
+              Headers:
+                - Host
+                - Origin
+                - Authorization
+            DefaultTTL: 0
+            MinTTL: 0
+            MaxTTL: 0
+        Enabled: true
+        PriceClass: PriceClass_100
+        ViewerCertificate:
+          !If 
+            - HasCertificate
+            - AcmCertificateArn: !Ref SSLCertificateArn
+              SslSupportMethod: sni-only
+              MinimumProtocolVersion: TLSv1.2_2021
+            - CloudFrontDefaultCertificate: true
 
 Outputs:
   VPCId:
@@ -427,3 +555,18 @@ Outputs:
   LambdaFunctionName:
     Description: Name of the EIP Manager Lambda function for code deployment.
     Value: !Ref EIPManagerLambdaFunction
+  
+  CloudFrontDomainName:
+    Condition: CreateCloudFront
+    Description: Domain name of the CloudFront distribution
+    Value: !GetAtt CloudFrontDistribution.DomainName
+  
+  SecureAirflowURL:
+    Condition: CreateCloudFront
+    Description: Secure Airflow Web UI URL via CloudFront
+    Value: !Sub "https://${DomainName}/airflow/"
+  
+  SecureKeycloakURL:
+    Condition: CreateCloudFront
+    Description: Secure Keycloak Web UI URL via CloudFront
+    Value: !Sub "https://${DomainName}/keycloak/"

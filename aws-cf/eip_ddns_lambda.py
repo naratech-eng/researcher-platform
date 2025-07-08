@@ -21,7 +21,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, str]:
         stack_name = os.environ['STACK_NAME']
         ddns_password = os.environ.get('DDNS_PASSWORD', '')
         domain = os.environ.get('DOMAIN', '')
-        host = os.environ.get('HOST', '@')
+        host = os.environ.get('HOST', 'etl-backend')
 
         # Verify the event is one we should process
         if not (event.get("source") == "aws.ec2" and event.get("detail-type") == "EC2 Instance State-change Notification"):
