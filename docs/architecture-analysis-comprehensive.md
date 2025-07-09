@@ -203,7 +203,7 @@ graph TB
     class CDC,KAFKA dataClass
 ```
 
-### 1.2 Simplified Blog Post Architecture Diagram
+### 1.2 Simplified Architecture Diagram
 
 ```mermaid
 %%{init: {
