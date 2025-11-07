@@ -1,220 +1,189 @@
 # Animal Genetics Research Platform - Frontend
 
-Multi-method authentication system with role-based access control (RBAC) built with Next.js 16.0.1.
+Modern authentication system with multiple login methods and role-based access control.
 
 ## Features
 
-### Authentication Methods
+- **Multi-Method Authentication**:
+  - Email/Password (with backend API)
+  - MetaMask (Web3 wallet)
+  - Decentralized Identity (DID)
 
-1. **Email/Password with Amazon Cognito** - Traditional authentication with password management
-2. **Social Login** - Google, Facebook, and Apple OAuth integration
-3. **MetaMask (Web3)** - Ethereum wallet connection with message signing
-4. **Decentralized Identity (DID)** - Support for Civic and uPort providers
+- **Role-Based Access Control**:
+  - Admin - Full platform access
+  - Researcher - Research projects and data analysis
+  - Farmer - Livestock management
+  - Student - Learning resources
 
-### Role-Based Access Control
+- **Modern UI**: Built with Next.js, React, TypeScript, and Tailwind CSS
 
-Four distinct user roles with hierarchical permissions:
-- **Admin**: Full platform access, user management, system configuration
-- **Researcher**: Research projects, data analysis, notebooks, publications
-- **Farmer**: Livestock management, breeding insights, health records
-- **Student**: Learning resources, research access, educational materials
+## Environment Setup
 
-### Dashboard Features
+### Step 1: Create `.env.local` file
 
-- Role-specific content and quick actions
-- Permission-based UI rendering
-- Activity tracking and notifications
-- Responsive design for all devices
-- MetaMask and DID connection indicators
+The environment file is already created for you at `.env.local` with these variables:
 
-## Tech Stack
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
 
-- **Next.js 16.0.1** with App Router
-- **React 19.2.0** with TypeScript
-- **Tailwind CSS 4.1** for styling
-- **AWS Amplify 6** for Cognito integration
-- **Ethers.js 6** for Web3/MetaMask
-- **Zustand 5** for state management
-- **Supabase** for database
-- **pnpm** for package management
+**No changes needed for local development!**
 
-## Installation
+### Step 2: Start the Backend
 
-1. Install dependencies:
+Make sure the user-backend is running on port 3001:
+
+```bash
+cd ../user-backend
+bun install
+bun run dev
+```
+
+### Step 3: Install Dependencies
+
 ```bash
 pnpm install
 ```
 
-2. Configure environment variables:
-```bash
-cp .env.example .env.local
-```
-
-Update `.env.local` with your credentials:
-```
-NEXT_PUBLIC_AWS_USER_POOL_ID=your_cognito_user_pool_id
-NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID=your_cognito_client_id
-NEXT_PUBLIC_AWS_COGNITO_DOMAIN=your_cognito_domain
-```
-
-## Development
+### Step 4: Start Development Server
 
 ```bash
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) - automatically redirects to login or dashboard.
+The application will be available at `http://localhost:3000`
 
-## Build
+## Pages
+
+- `/` - Home (redirects to dashboard)
+- `/login` - Multi-method authentication page
+- `/register` - User registration
+- `/dashboard` - Role-based dashboard (protected)
+
+## Quick Test
+
+### Register a New User
+
+1. Go to http://localhost:3000/register
+2. Fill in the form:
+   - First Name: Test
+   - Last Name: User
+   - Email: test@example.com
+   - Password: password123
+   - Role: Farmer
+3. Click "Create Account"
+
+### Login
+
+1. Go to http://localhost:3000/login
+2. Enter credentials:
+   - Email: test@example.com
+   - Password: password123
+3. Click "Sign In"
+
+You'll be redirected to the dashboard with role-specific content!
+
+## Project Structure
+
+```
+app/
+├── login/          # Login page (email, MetaMask, DID)
+├── register/       # Registration page
+├── dashboard/      # Protected dashboard
+├── layout.tsx      # Root layout
+└── page.tsx        # Home page (redirects)
+
+components/
+├── ProtectedRoute.tsx    # Route protection
+└── PermissionGate.tsx    # Conditional rendering
+
+services/
+├── api.ts               # Backend API client
+├── cognitoAuth.ts       # Cognito auth (optional)
+├── metamaskAuth.ts      # MetaMask integration
+└── didAuth.ts           # DID integration
+
+store/
+└── authStore.ts         # Zustand auth state
+
+types/
+└── auth.ts              # TypeScript interfaces
+
+utils/
+└── rbac.ts             # Role-based access control
+```
+
+## Authentication Flow
+
+### Email/Password
+1. User enters credentials
+2. Frontend calls `/api/auth/login`
+3. Backend validates & returns JWT token
+4. Token stored in localStorage
+5. User redirected to dashboard
+
+### MetaMask
+1. User clicks "Connect MetaMask"
+2. MetaMask prompts for wallet connection
+3. User signs authentication message
+4. Frontend sends wallet address + signature to backend
+5. Backend verifies signature & returns JWT
+6. User logged in
+
+## API Integration
+
+The frontend connects to the backend API at `http://localhost:3001`:
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/auth/register` | POST | Register new user |
+| `/api/auth/login` | POST | Email/password login |
+| `/api/auth/metamask` | POST | MetaMask authentication |
+| `/api/auth/did` | POST | DID authentication |
+| `/api/auth/profile` | GET | Get user profile (requires JWT) |
+| `/health` | GET | Health check |
+
+## Troubleshooting
+
+### "Cannot connect to backend"
+
+1. Check backend is running:
+   ```bash
+   curl http://localhost:3001/health
+   ```
+
+2. Verify `NEXT_PUBLIC_API_URL` in `.env.local`:
+   ```bash
+   cat .env.local
+   ```
+
+### "Login failed"
+
+1. Check backend logs for errors
+2. Verify MongoDB/DocumentDB is running
+3. Try registering a new account first
+
+### MetaMask not detected
+
+1. Install MetaMask browser extension
+2. Create/import a wallet
+3. Refresh the page
+
+## Build for Production
 
 ```bash
 pnpm build
 ```
 
-## Project Structure
+## Tech Stack
 
-```
-frontend/
-├── app/
-│   ├── layout.tsx          # Root layout with AuthProvider
-│   ├── page.tsx            # Home (redirects to dashboard)
-│   ├── login/              # Login page
-│   └── dashboard/          # Protected dashboard
-├── components/
-│   ├── AuthProvider.tsx    # Auth initialization
-│   ├── ProtectedRoute.tsx  # Route protection
-│   └── PermissionGate.tsx  # Permission-based rendering
-├── services/
-│   ├── cognitoAuth.ts      # Cognito authentication
-│   ├── metamaskAuth.ts     # MetaMask Web3 auth
-│   └── didAuth.ts          # DID authentication
-├── store/
-│   └── authStore.ts        # Zustand auth state
-├── types/
-│   └── auth.ts             # TypeScript types
-├── utils/
-│   └── rbac.ts             # Permission utilities
-└── lib/
-    ├── amplify-config.ts   # AWS Amplify setup
-    └── supabase.ts         # Supabase client
-```
-
-## AWS Cognito Setup (Required)
-
-### 1. Create User Pool
-
-```bash
-aws cognito-idp create-user-pool \
-  --pool-name animal-genetics-pool \
-  --auto-verified-attributes email \
-  --schema Name=custom:role,AttributeDataType=String,Mutable=true
-```
-
-### 2. Create User Pool Client
-
-```bash
-aws cognito-idp create-user-pool-client \
-  --user-pool-id YOUR_USER_POOL_ID \
-  --client-name animal-genetics-client \
-  --generate-secret false \
-  --allowed-o-auth-flows code implicit \
-  --allowed-o-auth-scopes openid email profile \
-  --callback-urls http://localhost:3000 \
-  --logout-urls http://localhost:3000
-```
-
-### 3. Create User Groups
-
-```bash
-for role in Admin Researcher Farmer Student; do
-  aws cognito-idp create-group \
-    --group-name $role \
-    --user-pool-id YOUR_USER_POOL_ID
-done
-```
-
-### 4. Configure Social Providers
-
-In AWS Console:
-1. Navigate to Cognito → User Pools → Your Pool
-2. Go to "App integration" → "Federated identity providers"
-3. Add Google, Facebook, Apple providers
-4. Configure OAuth redirect URLs
-
-## Authentication Flows
-
-### Email/Password Login
-User enters credentials → Cognito validates → JWT tokens returned → User redirected to dashboard
-
-### Social Login
-Click provider → Cognito hosted UI → Provider auth → Account linked → Tokens returned → Dashboard
-
-### MetaMask Login
-Connect wallet → Select account → Sign message → Signature verified → Session created → Dashboard
-
-### DID Login
-Select provider → DID authentication → Credentials verified → User profile created → Dashboard
-
-## RBAC System
-
-Permission matrix defined in `utils/rbac.ts`:
-
-```typescript
-const rolePermissions = {
-  Admin: [
-    { resource: 'users', actions: ['create', 'read', 'update', 'delete'] },
-    // ...
-  ],
-  // ...
-}
-```
-
-Usage in components:
-
-```tsx
-<PermissionGate resource="data" action="create">
-  <button>Add New Data</button>
-</PermissionGate>
-```
-
-## Environment Variables
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | Yes |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key | Yes |
-| `NEXT_PUBLIC_AWS_USER_POOL_ID` | Cognito User Pool ID | Yes |
-| `NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID` | Cognito Client ID | Yes |
-| `NEXT_PUBLIC_AWS_COGNITO_DOMAIN` | Cognito hosted UI domain | Yes |
-| `NEXT_PUBLIC_AWS_IDENTITY_POOL_ID` | Cognito Identity Pool | No |
-| `NEXT_PUBLIC_APP_URL` | Application URL | No |
-
-## Security Best Practices
-
-- Never commit `.env.local` to version control
-- Use HTTPS in production
-- Implement rate limiting on auth endpoints
-- Rotate credentials regularly
-- Validate JWT tokens server-side
-- Enable MFA for admin accounts
-- Audit user actions and access logs
-
-## Troubleshooting
-
-### MetaMask Not Detected
-- Install MetaMask browser extension
-- Refresh the page
-- Check browser console for errors
-
-### Cognito Authentication Fails
-- Verify User Pool configuration
-- Check OAuth redirect URLs
-- Ensure user exists in correct group
-
-### Build Errors
-- Clear `.next` directory: `rm -rf .next`
-- Reinstall dependencies: `pnpm install`
-- Check TypeScript errors: `pnpm run build`
+- **Framework**: Next.js 16 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS 4
+- **State**: Zustand
+- **Auth**: JWT tokens
+- **Web3**: Ethers.js 6
 
 ## License
 

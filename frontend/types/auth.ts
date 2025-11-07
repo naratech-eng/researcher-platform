@@ -1,6 +1,6 @@
 export type UserRole = 'Farmer' | 'Researcher' | 'Student' | 'Admin';
 
-export type AuthMethod = 'cognito' | 'metamask' | 'did' | 'social';
+export type AuthMethod = 'cognito' | 'metamask' | 'did' | 'social' | 'email';
 
 export interface User {
   id: string;
