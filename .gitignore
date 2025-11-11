@@ -222,3 +222,4 @@ node_modules
 *.sln
 *.sw?
 # OS specific
+.next
