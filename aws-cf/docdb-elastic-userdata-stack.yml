@@ -1,0 +1,156 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Amazon DocumentDB Elastic (serverless) cluster for user data with VPC security group,
+  optional ingress, admin password stored in Secrets Manager (AuthType=SECRET_ARN),
+  and sensible defaults for us-east-2.
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC where Elastic DocumentDB will be deployed.
+
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: One or more subnet IDs in the VPC for the cluster (prefer private subnets across AZs).
+
+  AppSecurityGroupId:
+    Type: String
+    Default: ""
+    Description: (Optional) Security Group ID of the application that needs access to DocumentDB.
+
+  IngressCidr:
+    Type: String
+    Default: ""
+    Description: (Optional) CIDR (e.g., 10.0.0.0/16) allowed to access if AppSecurityGroupId is not supplied.
+
+  ClusterName:
+    Type: String
+    Default: user-data-docdb-elastic
+    Description: Name for the Elastic DocumentDB cluster.
+
+  AdminUserName:
+    Type: String
+    Default: docdbadmin
+    Description: Administrator username for the Elastic cluster.
+
+  ShardCapacity:
+    Type: Number
+    Default: 2
+    AllowedValues: [2, 4, 8, 16, 32, 64]
+    Description: vCPUs per shard.
+
+  ShardCount:
+    Type: Number
+    Default: 1
+    MinValue: 1
+    MaxValue: 32
+    Description: Number of shards for the cluster.
+
+  ShardInstanceCount:
+    Type: Number
+    Default: 1
+    MinValue: 1
+    Description: Number of instances per shard (1 = writer only; >1 adds replicas).
+
+  BackupRetentionPeriod:
+    Type: Number
+    Default: 7
+    Description: Number of days to retain automated backups.
+
+  KmsKeyId:
+    Type: String
+    Default: ""
+    Description: (Optional) KMS Key ARN or alias for encryption. Defaults to AWS-managed key if blank.
+
+Conditions:
+  HasAppSG: !Not [!Equals [!Ref AppSecurityGroupId, ""]]
+  HasIngressCidr: !Not [!Equals [!Ref IngressCidr, ""]]
+  UseKmsKey: !Not [!Equals [!Ref KmsKeyId, ""]]
+
+Resources:
+  DocDBElasticSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Amazon DocumentDB Elastic cluster
+      VpcId: !Ref VpcId
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-DocDBElasticSG"
+
+  DocDBElasticIngressFromAppSG:
+    Condition: HasAppSG
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref DocDBElasticSecurityGroup
+      IpProtocol: tcp
+      FromPort: 27017
+      ToPort: 27017
+      SourceSecurityGroupId: !Ref AppSecurityGroupId
+
+  DocDBElasticIngressFromCIDR:
+    Condition: HasIngressCidr
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref DocDBElasticSecurityGroup
+      IpProtocol: tcp
+      FromPort: 27017
+      ToPort: 27017
+      CidrIp: !Ref IngressCidr
+
+  DocDBElasticAdminSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub "${AWS::StackName}-DocDBElasticAdminPassword"
+      Description: Password for Elastic DocumentDB admin user (plain string)
+      GenerateSecretString:
+        PasswordLength: 30
+        ExcludeCharacters: '"@/\\'
+        ExcludePunctuation: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-DocDBElasticAdminPassword"
+
+  DocDBElasticCluster:
+    Type: AWS::DocDBElastic::Cluster
+    Properties:
+      AdminUserName: !Ref AdminUserName
+      # When AuthType is SECRET_ARN, AdminUserPassword must be the ARN of a Secrets Manager secret containing the password string.
+      AdminUserPassword: !GetAtt DocDBElasticAdminSecret.Arn
+      AuthType: SECRET_ARN
+      ClusterName: !Ref ClusterName
+      ShardCapacity: !Ref ShardCapacity
+      ShardCount: !Ref ShardCount
+      ShardInstanceCount: !Ref ShardInstanceCount
+      BackupRetentionPeriod: !Ref BackupRetentionPeriod
+      SubnetIds: !Ref SubnetIds
+      VpcSecurityGroupIds:
+        - !Ref DocDBElasticSecurityGroup
+      KmsKeyId: !If [UseKmsKey, !Ref KmsKeyId, !Ref "AWS::NoValue"]
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-DocDBElasticCluster"
+
+Outputs:
+  ClusterArn:
+    Description: ARN of the Elastic DocumentDB cluster
+    Value: !GetAtt DocDBElasticCluster.ClusterArn
+
+  ClusterEndpoint:
+    Description: Connection endpoint for the Elastic DocumentDB cluster
+    Value: !GetAtt DocDBElasticCluster.ClusterEndpoint
+
+  AdminUserNameOut:
+    Description: Administrator username for connecting to the cluster
+    Value: !Ref AdminUserName
+
+  AdminSecretArn:
+    Description: Secrets Manager ARN holding the admin password (plain string)
+    Value: !GetAtt DocDBElasticAdminSecret.Arn
+
+  SecurityGroupId:
+    Description: Security Group ID for the cluster
+    Value: !Ref DocDBElasticSecurityGroup
+
+  SubnetsUsed:
+    Description: Subnets used by the cluster
+    Value: !Join [",", !Ref SubnetIds]

@@ -1,0 +1,205 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Amazon DocumentDB (for user data) with subnet group, security group, master secret,
+  cluster parameter group, a single instance, and sensible defaults suitable for
+  private deployment in existing VPC subnets.
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC where DocumentDB will be deployed.
+
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: At least two private subnet IDs in different AZs for DocumentDB subnet group.
+
+  AppSecurityGroupId:
+    Type: String
+    Default: ""
+    Description: (Optional) Security Group ID of the application that needs access to DocumentDB.
+
+  IngressCidr:
+    Type: String
+    Default: ""
+    Description: (Optional) CIDR (e.g., 10.0.0.0/16) allowed to access DocumentDB if AppSecurityGroupId is not supplied.
+
+  DBClusterIdentifier:
+    Type: String
+    Default: user-data-docdb
+    Description: Identifier for the DocumentDB cluster.
+
+  DocDBPort:
+    Type: Number
+    Default: 27017
+    Description: Port for the DocumentDB cluster.
+
+  DocDBInstanceClass:
+    Type: String
+    Default: db.t3.medium
+    AllowedValues:
+      - db.t3.medium
+      - db.r5.large
+      - db.r5.xlarge
+      - db.r5.2xlarge
+    Description: Instance class for DocumentDB instances.
+
+  DocDBEngineVersion:
+    Type: String
+    Default: '5.0'
+    AllowedValues: ['4.0', '5.0']
+    Description: DocumentDB engine version.
+
+  MasterUsername:
+    Type: String
+    Default: docdbadmin
+    Description: Master username for DocumentDB.
+
+  BackupRetentionPeriod:
+    Type: Number
+    Default: 7
+    Description: Number of days to retain automated backups.
+
+  DeletionProtection:
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+    Description: Enable deletion protection on the cluster.
+
+Conditions:
+  HasAppSG: !Not [!Equals [!Ref AppSecurityGroupId, ""]]
+  HasIngressCidr: !Not [!Equals [!Ref IngressCidr, ""]]
+  DeletionProtectionEnabled: !Equals [!Ref DeletionProtection, 'true']
+
+Resources:
+  DocDBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Amazon DocumentDB cluster
+      VpcId: !Ref VpcId
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-DocDBSecurityGroup"
+
+  DocDBIngressFromAppSG:
+    Condition: HasAppSG
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref DocDBSecurityGroup
+      IpProtocol: tcp
+      FromPort: !Ref DocDBPort
+      ToPort: !Ref DocDBPort
+      SourceSecurityGroupId: !Ref AppSecurityGroupId
+
+  DocDBIngressFromCIDR:
+    Condition: HasIngressCidr
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref DocDBSecurityGroup
+      IpProtocol: tcp
+      FromPort: !Ref DocDBPort
+      ToPort: !Ref DocDBPort
+      CidrIp: !Ref IngressCidr
+
+  DocDBSubnetGroup:
+    Type: AWS::DocDB::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Subnet group for Amazon DocumentDB
+      SubnetIds: !Ref SubnetIds
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-DocDBSubnetGroup"
+
+  DocDBClusterParameterGroup:
+    Type: AWS::DocDB::DBClusterParameterGroup
+    Properties:
+      Description: Parameter group for Amazon DocumentDB cluster
+      Family: !Sub "docdb${DocDBEngineVersion}"
+      Parameters:
+        tls: enabled
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-DocDBClusterParamGroup"
+
+  DocDBMasterSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub "${AWS::StackName}-DocDBMasterSecret"
+      Description: Master credentials for DocumentDB cluster
+      GenerateSecretString:
+        SecretStringTemplate: !Sub '{"username":"${MasterUsername}"}'
+        GenerateStringKey: password
+        PasswordLength: 30
+        ExcludeCharacters: '"@/\\'
+        ExcludePunctuation: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-DocDBMasterSecret"
+
+  DocDBCluster:
+    Type: AWS::DocDB::DBCluster
+    DeletionPolicy: Snapshot
+    UpdateReplacePolicy: Snapshot
+    Properties:
+      DBClusterIdentifier: !Ref DBClusterIdentifier
+      EngineVersion: !Ref DocDBEngineVersion
+      Port: !Ref DocDBPort
+      DBSubnetGroupName: !Ref DocDBSubnetGroup
+      VpcSecurityGroupIds:
+        - !Ref DocDBSecurityGroup
+      DBClusterParameterGroupName: !Ref DocDBClusterParameterGroup
+      BackupRetentionPeriod: !Ref BackupRetentionPeriod
+      StorageEncrypted: true
+      DeletionProtection: !If [DeletionProtectionEnabled, true, false]
+      MasterUsername: !Ref MasterUsername
+      MasterUserPassword: !Sub "{{resolve:secretsmanager:${DocDBMasterSecret}:SecretString:password}}"
+      EnableCloudwatchLogsExports:
+        - audit
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-DocDBCluster"
+
+  DocDBSecretAttachment:
+    Type: AWS::SecretsManager::SecretTargetAttachment
+    Properties:
+      SecretId: !Ref DocDBMasterSecret
+      TargetId: !Ref DocDBCluster
+      TargetType: AWS::DocDB::DBCluster
+
+  DocDBInstance:
+    Type: AWS::DocDB::DBInstance
+    Properties:
+      DBClusterIdentifier: !Ref DocDBCluster
+      DBInstanceClass: !Ref DocDBInstanceClass
+      AutoMinorVersionUpgrade: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-DocDBInstance-1"
+
+Outputs:
+  DBClusterId:
+    Description: DocumentDB cluster identifier
+    Value: !Ref DocDBCluster
+
+  DBClusterEndpoint:
+    Description: DocumentDB cluster endpoint
+    Value: !GetAtt DocDBCluster.Endpoint
+
+  DBReaderEndpoint:
+    Description: DocumentDB reader endpoint
+    Value: !GetAtt DocDBCluster.ReadEndpoint
+
+  DBPort:
+    Description: DocumentDB port
+    Value: !Ref DocDBPort
+
+  SecurityGroupId:
+    Description: Security Group ID for DocumentDB
+    Value: !Ref DocDBSecurityGroup
+
+  SubnetGroupName:
+    Description: Subnet group name for DocumentDB
+    Value: !Ref DocDBSubnetGroup
+
+  MasterSecretArn:
+    Description: Secrets Manager ARN for the DocumentDB master credentials
+    Value: !Ref DocDBMasterSecret

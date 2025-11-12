@@ -1,6 +1,7 @@
 import { MongoClient, Db } from 'mongodb';
+import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 
-const MONGODB_URI = process.env.DOCUMENTDB_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017';
+const FALLBACK_URI = process.env.DOCUMENTDB_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017';
 const DB_NAME = process.env.DB_NAME || 'animal_genetics';
 
 let client: MongoClient | null = null;
@@ -27,8 +28,8 @@ export async function connectDB(): Promise<Db> {
       delete options.tls;
       delete options.tlsCAFile;
     }
-
-    client = new MongoClient(MONGODB_URI, options);
+    const uri = await resolveMongoUri();
+    client = new MongoClient(uri, options);
     await client.connect();
 
     db = client.db(DB_NAME);
@@ -42,6 +43,32 @@ export async function connectDB(): Promise<Db> {
     console.error('❌ DocumentDB connection error:', error);
     throw error;
   }
+}
+
+async function resolveMongoUri(): Promise<string> {
+  if (process.env.DOCUMENTDB_URI) return process.env.DOCUMENTDB_URI;
+  if (process.env.MONGODB_URI) return process.env.MONGODB_URI;
+
+  const secretArn = process.env.DOCDB_ELASTIC_ADMIN_SECRET_ARN || process.env.DOCDB_SECRET_ARN;
+  const endpoint = process.env.DOCUMENTDB_ENDPOINT;
+  const port = process.env.DOCUMENTDB_PORT ? Number(process.env.DOCUMENTDB_PORT) : 27017;
+  const username = process.env.DOCUMENTDB_USERNAME || 'docdbadmin';
+
+  if (secretArn && endpoint) {
+    const password = await fetchSecretString(secretArn);
+    return `mongodb://${encodeURIComponent(username)}:${encodeURIComponent(password)}@${endpoint}:${port}/`;
+  }
+
+  return FALLBACK_URI;
+}
+
+async function fetchSecretString(secretArn: string): Promise<string> {
+  const region = process.env.AWS_REGION || 'us-east-2';
+  const sm = new SecretsManagerClient({ region });
+  const resp = await sm.send(new GetSecretValueCommand({ SecretId: secretArn }));
+  if (resp.SecretString) return resp.SecretString;
+  if (resp.SecretBinary) return Buffer.from(resp.SecretBinary as any, 'base64').toString('utf8');
+  throw new Error('Secret has no SecretString or SecretBinary');
 }
 
 async function createIndexes() {

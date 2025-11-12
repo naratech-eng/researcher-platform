@@ -10,6 +10,7 @@
     "start": "bun run src/server.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.676.0",
     "mongodb": "^6.3.0",
     "dotenv": "^16.4.5",
     "zod": "^3.22.4",
