@@ -17,7 +17,7 @@ Parameters:
     Default: WEB_COMPUTE
   NodeVersion:
     Type: String
-    Default: "20"
+    Default: "22"
     Description: Node.js major version for build/runtime (e.g., 20 or 22)
   MonorepoAppRoot:
     Type: String
@@ -79,6 +79,7 @@ Resources:
       Name: !Ref AppName
       Platform: !Ref PlatformType
       Repository: !Sub "https://github.com/${RepoOwner}/${RepoName}"
+      IAMServiceRole: !GetAtt AmplifyServiceRole.Arn
       AccessToken: !If
         - UseSecret
         - !Sub "{{resolve:secretsmanager:${GitHubAccessTokenSecretArn}:SecretString}}"
@@ -178,6 +179,22 @@ Resources:
       SubDomainSettings:
         - BranchName: !Ref BranchDevName
           Prefix: !Ref DevSubdomainPrefix
+
+  AmplifyServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - amplify.amazonaws.com
+                - amplify.us-east-2.amazonaws.com
+                - codebuild.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
 
 Outputs:
   AppId:
