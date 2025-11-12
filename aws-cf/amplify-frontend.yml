@@ -64,6 +64,11 @@ Parameters:
     NoEcho: true
     Default: ""
     Description: Optional. Inline password for dev basic auth (used only if DevBasicAuthSecretArn is empty).
+  UseAmplifyServiceRole:
+    Type: String
+    AllowedValues: ["true", "false"]
+    Default: "true"
+    Description: Set to "false" to omit IAMServiceRole from the Amplify App
 
 Conditions:
   UseSecret: !Not [!Equals [!Ref GitHubAccessTokenSecretArn, ""]]
@@ -71,6 +76,7 @@ Conditions:
   PRPreviewsEnabled: !Equals [!Ref EnablePRPreviews, "true"]
   UseDevBasicAuthSecret: !Not [!Equals [!Ref DevBasicAuthSecretArn, ""]]
   UseDevBasicAuthInline: !And [!Equals [!Ref DevBasicAuthSecretArn, ""], !And [!Not [!Equals [!Ref DevBasicAuthUsername, ""]], !Not [!Equals [!Ref DevBasicAuthPassword, ""]]]]
+  UseAmplifyRole: !Equals [!Ref UseAmplifyServiceRole, "true"]
 
 Resources:
   AmplifyApp:
@@ -79,7 +85,7 @@ Resources:
       Name: !Ref AppName
       Platform: !Ref PlatformType
       Repository: !Sub "https://github.com/${RepoOwner}/${RepoName}"
-      IAMServiceRole: !GetAtt AmplifyServiceRole.Arn
+      IAMServiceRole: !If [UseAmplifyRole, !GetAtt AmplifyServiceRole.Arn, !Ref "AWS::NoValue"]
       AccessToken: !If
         - UseSecret
         - !Sub "{{resolve:secretsmanager:${GitHubAccessTokenSecretArn}:SecretString}}"
@@ -188,10 +194,19 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              Service:
-                - amplify.amazonaws.com
-                - amplify.us-east-2.amazonaws.com
-                - codebuild.amazonaws.com
+              Service: amplify.amazonaws.com
+            Action: 'sts:AssumeRole'
+          - Effect: Allow
+            Principal:
+              Service: amplify.us-east-2.amazonaws.com
+            Action: 'sts:AssumeRole'
+          - Effect: Allow
+            Principal:
+              Service: amplifybackend.amazonaws.com
+            Action: 'sts:AssumeRole'
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
             Action: 'sts:AssumeRole'
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess
