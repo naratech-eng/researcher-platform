@@ -1,0 +1,192 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Amplify Hosting for Next.js frontend with GitHub CI/CD, main/dev branches, and custom domain mapping.
+
+Parameters:
+  AppName:
+    Type: String
+    Default: ResearcherPlatformFrontend
+  RepoOwner:
+    Type: String
+    Description: GitHub organization or user that owns the repository
+  RepoName:
+    Type: String
+    Description: GitHub repository name
+  PlatformType:
+    Type: String
+    AllowedValues: [WEB, WEB_DYNAMIC, WEB_COMPUTE]
+    Default: WEB_COMPUTE
+  NodeVersion:
+    Type: String
+    Default: "20"
+    Description: Node.js major version for build/runtime (e.g., 20 or 22)
+  MonorepoAppRoot:
+    Type: String
+    Default: frontend
+  BranchMainName:
+    Type: String
+    Default: main
+  BranchDevName:
+    Type: String
+    Default: dev
+  EnablePRPreviews:
+    Type: String
+    AllowedValues: ["true", "false"]
+    Default: "true"
+  DomainName:
+    Type: String
+    Default: naratech.ca
+  ProdSubdomainPrefix:
+    Type: String
+    Default: platform
+  DevSubdomainPrefix:
+    Type: String
+    Default: dev
+  GitHubAccessToken:
+    Type: String
+    NoEcho: true
+    Default: ""
+    Description: Optional. GitHub Personal Access Token (classic) with repo and admin:repo_hook scopes. Leave blank if using Secrets Manager.
+  GitHubAccessTokenSecretArn:
+    Type: String
+    Default: ""
+    Description: Optional. ARN of a Secrets Manager secret whose SecretString is the GitHub PAT. Leave blank to use GitHubAccessToken.
+
+  DevBasicAuthSecretArn:
+    Type: String
+    Default: ""
+    Description: Optional. ARN of Secrets Manager secret with JSON {"username":"...","password":"..."} for dev branch basic auth.
+  DevBasicAuthUsername:
+    Type: String
+    Default: ""
+    Description: Optional. Inline username for dev basic auth (used only if DevBasicAuthSecretArn is empty).
+  DevBasicAuthPassword:
+    Type: String
+    NoEcho: true
+    Default: ""
+    Description: Optional. Inline password for dev basic auth (used only if DevBasicAuthSecretArn is empty).
+
+Conditions:
+  UseSecret: !Not [!Equals [!Ref GitHubAccessTokenSecretArn, ""]]
+  UseInlineToken: !And [!Equals [!Ref GitHubAccessTokenSecretArn, ""], !Not [!Equals [!Ref GitHubAccessToken, ""]]]
+  PRPreviewsEnabled: !Equals [!Ref EnablePRPreviews, "true"]
+  UseDevBasicAuthSecret: !Not [!Equals [!Ref DevBasicAuthSecretArn, ""]]
+  UseDevBasicAuthInline: !And [!Equals [!Ref DevBasicAuthSecretArn, ""], !And [!Not [!Equals [!Ref DevBasicAuthUsername, ""]], !Not [!Equals [!Ref DevBasicAuthPassword, ""]]]]
+
+Resources:
+  AmplifyApp:
+    Type: AWS::Amplify::App
+    Properties:
+      Name: !Ref AppName
+      Platform: !Ref PlatformType
+      Repository: !Sub "https://github.com/${RepoOwner}/${RepoName}"
+      AccessToken: !If
+        - UseSecret
+        - !Sub "{{resolve:secretsmanager:${GitHubAccessTokenSecretArn}:SecretString}}"
+        - !If [UseInlineToken, !Ref GitHubAccessToken, !Ref "AWS::NoValue"]
+      EnvironmentVariables:
+        - Name: AMPLIFY_MONOREPO_APP_ROOT
+          Value: !Ref MonorepoAppRoot
+      BuildSpec: !Sub |
+        version: 1
+        applications:
+          - appRoot: ${MonorepoAppRoot}
+            frontend:
+              phases:
+                preBuild:
+                  commands:
+                    - export NODE_VERSION=${NodeVersion}
+                    - export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+                    - echo "Using Node $NODE_VERSION"
+                    - nvm install -s $NODE_VERSION || echo "nvm install skipped"
+                    - nvm use $NODE_VERSION || echo "nvm use skipped"
+                    - corepack enable || true
+                    - if command -v pnpm >/dev/null 2>&1; then export USE_PNPM=1; else export USE_PNPM=0; fi
+                    - |
+                      if [ "$USE_PNPM" = "1" ]; then
+                        pnpm --version || true
+                        pnpm install --frozen-lockfile || pnpm install
+                      else
+                        if [ -f package-lock.json ]; then
+                          npm ci
+                        else
+                          npm install
+                        fi
+                      fi
+                build:
+                  commands:
+                    - |
+                      if [ "$USE_PNPM" = "1" ]; then
+                        pnpm run build
+                      else
+                        npm run build
+                      fi
+              artifacts:
+                baseDirectory: .next
+                files:
+                  - '**/*'
+              cache:
+                paths:
+                  - node_modules/**/*
+            environment:
+              variables:
+                NEXT_TELEMETRY_DISABLED: '1'
+                NODE_VERSION: '${NodeVersion}'
+
+  MainBranch:
+    Type: AWS::Amplify::Branch
+    Properties:
+      AppId: !GetAtt AmplifyApp.AppId
+      BranchName: !Ref BranchMainName
+      EnableAutoBuild: true
+      Stage: PRODUCTION
+      EnablePullRequestPreview: !If [PRPreviewsEnabled, true, false]
+
+  DevBranch:
+    Type: AWS::Amplify::Branch
+    Properties:
+      AppId: !GetAtt AmplifyApp.AppId
+      BranchName: !Ref BranchDevName
+      EnableAutoBuild: true
+      Stage: DEVELOPMENT
+      EnablePullRequestPreview: !If [PRPreviewsEnabled, true, false]
+      BasicAuthConfig: !If
+        - UseDevBasicAuthSecret
+        - { EnableBasicAuth: true, Username: !Sub "{{resolve:secretsmanager:${DevBasicAuthSecretArn}:SecretString:username}}", Password: !Sub "{{resolve:secretsmanager:${DevBasicAuthSecretArn}:SecretString:password}}" }
+        - !If
+          - UseDevBasicAuthInline
+          - { EnableBasicAuth: true, Username: !Ref DevBasicAuthUsername, Password: !Ref DevBasicAuthPassword }
+          - !Ref "AWS::NoValue"
+
+  DomainAssociationProd:
+    Type: AWS::Amplify::Domain
+    DependsOn:
+      - MainBranch
+    Properties:
+      AppId: !GetAtt AmplifyApp.AppId
+      DomainName: !Ref DomainName
+      SubDomainSettings:
+        - BranchName: !Ref BranchMainName
+          Prefix: !Ref ProdSubdomainPrefix
+
+  DomainAssociationDev:
+    Type: AWS::Amplify::Domain
+    DependsOn:
+      - DevBranch
+    Properties:
+      AppId: !GetAtt AmplifyApp.AppId
+      DomainName: !Sub "${ProdSubdomainPrefix}.${DomainName}"
+      SubDomainSettings:
+        - BranchName: !Ref BranchDevName
+          Prefix: !Ref DevSubdomainPrefix
+
+Outputs:
+  AppId:
+    Value: !GetAtt AmplifyApp.AppId
+  DefaultDomain:
+    Value: !GetAtt AmplifyApp.DefaultDomain
+  AmplifyConsoleAppUrl:
+    Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/amplify/home?region=${AWS::Region}#/${AmplifyApp.AppId}"
+  DevSubdomain:
+    Value: !Sub "${DevSubdomainPrefix}.${ProdSubdomainPrefix}.${DomainName}"
+  ProdSubdomain:
+    Value: !Sub "${ProdSubdomainPrefix}.${DomainName}"
