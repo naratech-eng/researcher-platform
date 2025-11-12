@@ -69,6 +69,15 @@ Parameters:
     AllowedValues: ["true", "false"]
     Default: "true"
     Description: Set to "false" to omit IAMServiceRole from the Amplify App
+  UseExistingAppId:
+    Type: String
+    AllowedValues: ["true", "false"]
+    Default: "false"
+    Description: Set to "true" to skip creating the Amplify App and use ExistingAppId
+  ExistingAppId:
+    Type: String
+    Default: ""
+    Description: When UseExistingAppId=true, provide the existing Amplify AppId
 
 Conditions:
   UseSecret: !Not [!Equals [!Ref GitHubAccessTokenSecretArn, ""]]
@@ -77,9 +86,12 @@ Conditions:
   UseDevBasicAuthSecret: !Not [!Equals [!Ref DevBasicAuthSecretArn, ""]]
   UseDevBasicAuthInline: !And [!Equals [!Ref DevBasicAuthSecretArn, ""], !And [!Not [!Equals [!Ref DevBasicAuthUsername, ""]], !Not [!Equals [!Ref DevBasicAuthPassword, ""]]]]
   UseAmplifyRole: !Equals [!Ref UseAmplifyServiceRole, "true"]
+  CreateAmplifyApp: !Equals [!Ref UseExistingAppId, "false"]
+  UseExistingApp: !Equals [!Ref UseExistingAppId, "true"]
 
 Resources:
   AmplifyApp:
+    Condition: CreateAmplifyApp
     Type: AWS::Amplify::App
     Properties:
       Name: !Ref AppName
@@ -142,7 +154,7 @@ Resources:
   MainBranch:
     Type: AWS::Amplify::Branch
     Properties:
-      AppId: !GetAtt AmplifyApp.AppId
+      AppId: !If [UseExistingApp, !Ref ExistingAppId, !GetAtt AmplifyApp.AppId]
       BranchName: !Ref BranchMainName
       EnableAutoBuild: true
       Stage: PRODUCTION
@@ -151,7 +163,7 @@ Resources:
   DevBranch:
     Type: AWS::Amplify::Branch
     Properties:
-      AppId: !GetAtt AmplifyApp.AppId
+      AppId: !If [UseExistingApp, !Ref ExistingAppId, !GetAtt AmplifyApp.AppId]
       BranchName: !Ref BranchDevName
       EnableAutoBuild: true
       Stage: DEVELOPMENT
@@ -169,7 +181,7 @@ Resources:
     DependsOn:
       - MainBranch
     Properties:
-      AppId: !GetAtt AmplifyApp.AppId
+      AppId: !If [UseExistingApp, !Ref ExistingAppId, !GetAtt AmplifyApp.AppId]
       DomainName: !Ref DomainName
       SubDomainSettings:
         - BranchName: !Ref BranchMainName
@@ -180,7 +192,7 @@ Resources:
     DependsOn:
       - DevBranch
     Properties:
-      AppId: !GetAtt AmplifyApp.AppId
+      AppId: !If [UseExistingApp, !Ref ExistingAppId, !GetAtt AmplifyApp.AppId]
       DomainName: !Sub "${ProdSubdomainPrefix}.${DomainName}"
       SubDomainSettings:
         - BranchName: !Ref BranchDevName
@@ -213,11 +225,15 @@ Resources:
 
 Outputs:
   AppId:
-    Value: !GetAtt AmplifyApp.AppId
+    Value: !If [UseExistingApp, !Ref ExistingAppId, !GetAtt AmplifyApp.AppId]
   DefaultDomain:
+    Condition: CreateAmplifyApp
     Value: !GetAtt AmplifyApp.DefaultDomain
   AmplifyConsoleAppUrl:
-    Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/amplify/home?region=${AWS::Region}#/${AmplifyApp.AppId}"
+    Value: !If
+      - UseExistingApp
+      - !Sub "https://${AWS::Region}.console.aws.amazon.com/amplify/home?region=${AWS::Region}#/${ExistingAppId}"
+      - !Sub "https://${AWS::Region}.console.aws.amazon.com/amplify/home?region=${AWS::Region}#/${AmplifyApp.AppId}"
   DevSubdomain:
     Value: !Sub "${DevSubdomainPrefix}.${ProdSubdomainPrefix}.${DomainName}"
   ProdSubdomain:

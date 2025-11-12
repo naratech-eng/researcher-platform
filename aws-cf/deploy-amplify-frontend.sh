@@ -64,7 +64,9 @@ aws cloudformation deploy \
     DevSubdomainPrefix="$DEV_SUBDOMAIN_PREFIX" \
     GitHubAccessTokenSecretArn="$GH_SECRET_ARN" \
     DevBasicAuthSecretArn="$DEV_SECRET_ARN" \
-    UseAmplifyServiceRole="${UseAmplifyServiceRole:-true}"
+    UseAmplifyServiceRole="${UseAmplifyServiceRole:-true}" \
+    UseExistingAppId="${UseExistingAppId:-false}" \
+    ExistingAppId="${ExistingAppId:-}"
 
 aws cloudformation describe-stacks --region "$REGION" --stack-name "$STACK_NAME" --query "Stacks[0].Outputs" --output table
 
