@@ -222,3 +222,14 @@ node_modules
 *.sln
 *.sw?
 # OS specific
+.next
+# Frontend tooling/build caches
+.turbo
+.vercel
+*.tsbuildinfo
+
+# Certificates/keys
+*.pem
+ 
+# Monorepo app-specific ignores
+frontend/.next

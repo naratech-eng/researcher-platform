@@ -15,13 +15,15 @@ async function fetchApi<T>(
   try {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...options.headers,
+      ...(options.headers instanceof Headers
+        ? Object.fromEntries(options.headers.entries())
+        : ((options.headers as Record<string, string> | undefined) ?? {})),
     };
 
     if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+      headers.Authorization = `Bearer ${token}`;
     }
 
     const response = await fetch(`${API_URL}${endpoint}`, {
