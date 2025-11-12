@@ -217,6 +217,15 @@ dev-debug.log
 # Dependency directories
 node_modules
 .bun
+
+user-backend/node_modules
+user-backend/.bun
+frontend/node_modules
+frontend/.next
+frontend/.turbo
+frontend/.vercel
+frontend/.next
+
 # Environment variables
 # Editor directories and files
 .idea
