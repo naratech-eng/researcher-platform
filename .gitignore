@@ -181,8 +181,13 @@ docs/.DS_Store
 ../.kilocode
 *.kilocode
 
-# Project specific files
-animal-genetics-prd.md
+# Monorepo app-specific ignores
+frontend/.next
+frontend/pnpm-lock.yaml
+frontend/next-env.d.ts
+package-lock.json
+yarn.lock
+ics-prd.md
 docs.zip
 ui-ux-design-prompt.md
 # Bun
