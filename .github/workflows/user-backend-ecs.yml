@@ -1,12 +1,7 @@
 name: Deploy user-backend ECS (CFN)
 
 on:
-  push:
-    branches: ["dev", "naratech"]
-    paths:
-      - 'user-backend/**'
-      - 'aws-cf/ecs-user-backend.yml'
-      - '.github/workflows/user-backend-ecs.yml'
+  workflow_dispatch:
 
 env:
   AWS_REGION: us-east-2

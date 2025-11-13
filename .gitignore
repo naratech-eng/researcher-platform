@@ -222,6 +222,8 @@ node_modules
 
 user-backend/node_modules
 user-backend/.bun
+user-backend/bun.lockb
+user-backend/bun.lock
 frontend/node_modules
 frontend/.next
 frontend/.turbo

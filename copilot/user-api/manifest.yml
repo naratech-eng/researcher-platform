@@ -1,5 +1,6 @@
 name: user-api
 type: Load Balanced Web Service
+platform: linux/arm64
 
 image:
   build:
@@ -24,17 +25,24 @@ variables:
   DB_NAME: animal_genetics
   AWS_REGION: us-east-2
   PORT: 3000
+  DOCUMENTDB_TLS: "true"
+  DOCUMENTDB_CA_FILE: /etc/ssl/certs/rds-global-bundle.pem
+  DOCUMENTDB_PORT: 27017
+  DOCUMENTDB_ENDPOINT: user-data-docdb-elastic-091957636975.us-east-2.docdb-elastic.amazonaws.com
+  DOCUMENTDB_USERNAME: docdbadmin
+  DOCDB_ELASTIC_ADMIN_SECRET_ARN: arn:aws:secretsmanager:us-east-2:091957636975:secret:genetics-docdb-elastic-DocDBElasticAdminPassword-JQ9gao
+
+secrets:
+  JWT_SECRET: JWT_SECRET
 
 environments:
   dev:
     secrets:
       JWT_SECRET: /copilot/naratech/dev/secrets/JWT_SECRET
-      DOCUMENTDB_URI: /copilot/naratech/dev/secrets/DOCUMENTDB_URI
     count: 1
   prod:
     secrets:
       JWT_SECRET: /copilot/naratech/prod/secrets/JWT_SECRET
-      DOCUMENTDB_URI: /copilot/naratech/prod/secrets/DOCUMENTDB_URI
     count: 2
     cpu: 512
     memory: 1024
