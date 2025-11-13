@@ -1,0 +1,46 @@
+name: user-api
+type: Load Balanced Web Service
+
+image:
+  build:
+    dockerfile: user-backend/Dockerfile
+    context: user-backend
+  port: 3000
+
+http:
+  path: '/'
+  healthcheck:
+    path: '/health'
+    healthy_threshold: 2
+    unhealthy_threshold: 2
+    interval: 10s
+    timeout: 5s
+
+cpu: 256
+memory: 512
+count: 1
+
+variables:
+  DB_NAME: animal_genetics
+  AWS_REGION: us-east-2
+  PORT: 3000
+
+environments:
+  dev:
+    secrets:
+      JWT_SECRET: /copilot/naratech/dev/secrets/JWT_SECRET
+      DOCUMENTDB_URI: /copilot/naratech/dev/secrets/DOCUMENTDB_URI
+    count: 1
+  prod:
+    secrets:
+      JWT_SECRET: /copilot/naratech/prod/secrets/JWT_SECRET
+      DOCUMENTDB_URI: /copilot/naratech/prod/secrets/DOCUMENTDB_URI
+    count: 2
+    cpu: 512
+    memory: 1024
+    http:
+      healthcheck:
+        healthy_threshold: 3
+        unhealthy_threshold: 2
+        interval: 15s
+        timeout: 10s
