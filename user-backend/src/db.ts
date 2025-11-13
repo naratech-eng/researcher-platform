@@ -18,6 +18,7 @@ export async function connectDB(): Promise<Db> {
       tlsCAFile: process.env.DOCUMENTDB_CA_FILE,
       retryWrites: false,
       directConnection: true,
+      authMechanism: 'SCRAM-SHA-1',
     };
 
     if (options.tlsCAFile === undefined) {
@@ -66,7 +67,19 @@ async function fetchSecretString(secretArn: string): Promise<string> {
   const region = process.env.AWS_REGION || 'us-east-2';
   const sm = new SecretsManagerClient({ region });
   const resp = await sm.send(new GetSecretValueCommand({ SecretId: secretArn }));
-  if (resp.SecretString) return resp.SecretString;
+  if (resp.SecretString) {
+    try {
+      const parsed = JSON.parse(resp.SecretString);
+      if (parsed && typeof parsed === 'object' && parsed.password) {
+        return String(parsed.password);
+      }
+      // if no password field, fall back to raw string
+      return resp.SecretString;
+    } catch {
+      // not JSON, return raw string
+      return resp.SecretString;
+    }
+  }
   if (resp.SecretBinary) return Buffer.from(resp.SecretBinary as any, 'base64').toString('utf8');
   throw new Error('Secret has no SecretString or SecretBinary');
 }

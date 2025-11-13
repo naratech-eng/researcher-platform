@@ -174,14 +174,18 @@ Resources:
                   - secretsmanager:GetSecretValue
                 Resource:
                   - !Ref DocDBSecretArn
-        - PolicyName: ReadJwtSecretOptional
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - secretsmanager:GetSecretValue
-                Resource: !If [HasJwtSecret, !Ref JwtSecretArn, !Ref "AWS::NoValue"]
+        - !If 
+          - HasJwtSecret
+          - PolicyName: ReadJwtSecret
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - secretsmanager:GetSecretValue
+                  Resource:
+                    - !Ref JwtSecretArn
+          - !Ref "AWS::NoValue"
 
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -241,6 +245,7 @@ Resources:
       DesiredCount: !If [IsProd, !Ref DesiredCountProd, !Ref DesiredCountDev]
       LaunchType: FARGATE
       PlatformVersion: LATEST
+      TaskDefinition: !Ref TaskDefinition
       DeploymentConfiguration:
         DeploymentCircuitBreaker:
           Enable: true

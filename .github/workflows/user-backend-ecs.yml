@@ -69,16 +69,20 @@ jobs:
           docker push "$ECR_URI:$IMAGE_TAG"
           echo "image_uri=$ECR_URI:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-      - name: Discover subnets and DocDB resources
+      - name: Discover VPC subnets and DocDB resources
         id: discover
         run: |
-          # Private subnets: reuse those used by the DocumentDB stack
-          PRIVATE_SUBNETS=$(aws cloudformation describe-stacks --region "$AWS_REGION" --stack-name "$DOCDB_STACK_NAME" \
-            --query "Stacks[0].Outputs[?OutputKey=='SubnetsUsed'].OutputValue" --output text)
-          if [[ -z "$PRIVATE_SUBNETS" ]]; then
-            echo "No private subnets found from DocDB stack outputs" >&2
+          # Private subnets: choose two subnets without MapPublicIpOnLaunch in the same VPC
+          PRIVATE_LIST=$(aws ec2 describe-subnets --region "$AWS_REGION" \
+            --filters "Name=vpc-id,Values=$VPC_ID" "Name=mapPublicIpOnLaunch,Values=false" \
+            --query "Subnets[].SubnetId" --output text)
+          PRIV1=$(echo "$PRIVATE_LIST" | awk '{print $1}')
+          PRIV2=$(echo "$PRIVATE_LIST" | awk '{print $2}')
+          if [[ -z "$PRIV1" || -z "$PRIV2" || "$PRIV1" == "$PRIV2" ]]; then
+            echo "Need at least two private subnets in $VPC_ID. Found: $PRIVATE_LIST" >&2
             exit 1
           fi
+          PRIVATE_SUBNETS="$PRIV1,$PRIV2"
 
           # Public subnets: choose two subnets with MapPublicIpOnLaunch=true in the same VPC
           PUBLIC_SUBNETS=$(aws ec2 describe-subnets --region "$AWS_REGION" \

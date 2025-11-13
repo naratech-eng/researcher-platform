@@ -3,7 +3,8 @@ import "dotenv/config";
 import { connectDB, closeDB } from "./db";
 import { register, login, metamaskAuth, didAuth, getProfile } from "./routes/auth";
 
-const PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
+const PORT = Number(process.env.PORT || "3001");
+const HOST = process.env.HOST || "0.0.0.0";
 
 function corsHeaders(origin?: string) {
   return {
@@ -15,14 +16,12 @@ function corsHeaders(origin?: string) {
 }
 
 async function startServer() {
-  try {
-    await connectDB();
-
-    serve({
-      port: PORT,
-      async fetch(req) {
+  serve({
+    hostname: HOST,
+    port: PORT,
+    async fetch(req) {
         const url = new URL(req.url);
-        const origin = req.headers.get("origin");
+        const origin = req.headers.get("origin") ?? undefined;
 
         if (req.method === "OPTIONS") {
           return new Response(null, {
@@ -60,20 +59,29 @@ async function startServer() {
         });
 
         return response;
-      },
-    });
+    },
+  });
 
-    console.log(`✅ User backend running on http://localhost:${PORT}`);
-    console.log(`📋 Available endpoints:`);
-    console.log(`   POST /api/auth/register`);
-    console.log(`   POST /api/auth/login`);
-    console.log(`   POST /api/auth/metamask`);
-    console.log(`   POST /api/auth/did`);
-    console.log(`   GET  /api/auth/profile`);
-    console.log(`   GET  /health`);
+  console.log(`✅ User backend running on http://${HOST}:${PORT}`);
+  console.log(`📋 Available endpoints:`);
+  console.log(`   POST /api/auth/register`);
+  console.log(`   POST /api/auth/login`);
+  console.log(`   POST /api/auth/metamask`);
+  console.log(`   POST /api/auth/did`);
+  console.log(`   GET  /api/auth/profile`);
+  console.log(`   GET  /health`);
+
+  void connectWithRetry();
+}
+
+async function connectWithRetry(attempt = 1): Promise<void> {
+  try {
+    await connectDB();
   } catch (error) {
-    console.error("❌ Failed to start server:", error);
-    process.exit(1);
+    const delayMs = Math.min(30000, attempt * 2000);
+    console.error(`❌ DocumentDB connect attempt ${attempt} failed. Retrying in ${delayMs}ms`, error);
+    await new Promise((r) => setTimeout(r, delayMs));
+    void connectWithRetry(attempt + 1);
   }
 }
 

@@ -1,0 +1,116 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Add two private subnets with route tables and a single NAT gateway to an existing VPC.
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: Existing VPC ID.
+  PublicSubnetForNat:
+    Type: AWS::EC2::Subnet::Id
+    Description: Existing public subnet ID where the NAT Gateway will be created.
+  PrivateSubnet1Cidr:
+    Type: String
+    Description: CIDR block for private subnet 1 (e.g., 172.31.128.0/20)
+  PrivateSubnet2Cidr:
+    Type: String
+    Description: CIDR block for private subnet 2 (e.g., 172.31.144.0/20)
+  PrivateSubnet1Az:
+    Type: String
+    Description: Availability Zone name for private subnet 1 (e.g., us-east-2a)
+  PrivateSubnet2Az:
+    Type: String
+    Description: Availability Zone name for private subnet 2 (e.g., us-east-2b)
+
+Resources:
+  NatEip:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  NatGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatEip.AllocationId
+      SubnetId: !Ref PublicSubnetForNat
+      Tags:
+        - Key: Name
+          Value: !Sub NAT-${VpcId}
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VpcId
+      CidrBlock: !Ref PrivateSubnet1Cidr
+      AvailabilityZone: !Ref PrivateSubnet1Az
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: PrivateSubnet1
+        - Key: Tier
+          Value: Private
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VpcId
+      CidrBlock: !Ref PrivateSubnet2Cidr
+      AvailabilityZone: !Ref PrivateSubnet2Az
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: PrivateSubnet2
+        - Key: Tier
+          Value: Private
+
+  PrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VpcId
+      Tags:
+        - Key: Name
+          Value: PrivateRT1
+
+  PrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VpcId
+      Tags:
+        - Key: Name
+          Value: PrivateRT2
+
+  PrivateSubnet1Route:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway
+
+  PrivateSubnet2Route:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable2
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway
+
+  AssocPrivateSubnet1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet1
+      RouteTableId: !Ref PrivateRouteTable1
+
+  AssocPrivateSubnet2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet2
+      RouteTableId: !Ref PrivateRouteTable2
+
+Outputs:
+  PrivateSubnet1Id:
+    Description: Private Subnet 1 ID
+    Value: !Ref PrivateSubnet1
+  PrivateSubnet2Id:
+    Description: Private Subnet 2 ID
+    Value: !Ref PrivateSubnet2
+  PrivateSubnetsCsv:
+    Description: CSV of created private subnets
+    Value: !Sub "${PrivateSubnet1},${PrivateSubnet2}"
