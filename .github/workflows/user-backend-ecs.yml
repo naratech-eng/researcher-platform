@@ -1,0 +1,131 @@
+name: Deploy user-backend ECS (CFN)
+
+on:
+  push:
+    branches: ["dev", "naratech"]
+    paths:
+      - 'user-backend/**'
+      - 'aws-cf/ecs-user-backend.yml'
+      - '.github/workflows/user-backend-ecs.yml'
+
+env:
+  AWS_REGION: us-east-2
+  ECR_REPO_NAME: user-backend
+  CFN_TEMPLATE: aws-cf/ecs-user-backend.yml
+  DOCDB_STACK_NAME: genetics-docdb-elastic
+  VPC_ID: vpc-0ac8a08f41152fc2e
+
+concurrency:
+  group: ecs-user-backend-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials via OIDC (deploy-user)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Determine environment
+        id: env
+        run: |
+          if [[ "${GITHUB_REF_NAME}" == "naratech" ]]; then
+            echo "env_name=production" >> $GITHUB_OUTPUT
+          else
+            echo "env_name=development" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Get AWS account ID
+        id: acct
+        run: |
+          echo "account_id=$(aws sts get-caller-identity --query Account --output text)" >> $GITHUB_OUTPUT
+
+      - name: Ensure ECR repository exists
+        run: |
+          aws ecr describe-repositories --repository-names "$ECR_REPO_NAME" >/dev/null 2>&1 || \
+          aws ecr create-repository --repository-name "$ECR_REPO_NAME" >/dev/null
+
+      - name: Login to ECR
+        run: |
+          aws ecr get-login-password --region "$AWS_REGION" | docker login \
+            --username AWS \
+            --password-stdin "${{ steps.acct.outputs.account_id }}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+
+      - name: Build and push Docker image
+        id: image
+        run: |
+          IMAGE_TAG=${GITHUB_SHA}
+          ECR_URI="${{ steps.acct.outputs.account_id }}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO_NAME}"
+          docker build -t "$ECR_URI:$IMAGE_TAG" -f user-backend/Dockerfile user-backend
+          docker push "$ECR_URI:$IMAGE_TAG"
+          echo "image_uri=$ECR_URI:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Discover subnets and DocDB resources
+        id: discover
+        run: |
+          # Private subnets: reuse those used by the DocumentDB stack
+          PRIVATE_SUBNETS=$(aws cloudformation describe-stacks --region "$AWS_REGION" --stack-name "$DOCDB_STACK_NAME" \
+            --query "Stacks[0].Outputs[?OutputKey=='SubnetsUsed'].OutputValue" --output text)
+          if [[ -z "$PRIVATE_SUBNETS" ]]; then
+            echo "No private subnets found from DocDB stack outputs" >&2
+            exit 1
+          fi
+
+          # Public subnets: choose two subnets with MapPublicIpOnLaunch=true in the same VPC
+          PUBLIC_SUBNETS=$(aws ec2 describe-subnets --region "$AWS_REGION" \
+            --filters "Name=vpc-id,Values=$VPC_ID" "Name=mapPublicIpOnLaunch,Values=true" \
+            --query "Subnets[].SubnetId" --output text)
+          PUB1=$(echo "$PUBLIC_SUBNETS" | awk '{print $1}')
+          PUB2=$(echo "$PUBLIC_SUBNETS" | awk '{print $2}')
+          if [[ -z "$PUB1" || -z "$PUB2" || "$PUB1" == "$PUB2" ]]; then
+            echo "Need at least two public subnets in $VPC_ID. Found: $PUBLIC_SUBNETS" >&2
+            exit 1
+          fi
+          PUBLIC_CSV="$PUB1,$PUB2"
+
+          # DocDB endpoint, secret ARN, and SG
+          DOCDB_ENDPOINT=$(aws cloudformation describe-stacks --region "$AWS_REGION" --stack-name "$DOCDB_STACK_NAME" \
+            --query "Stacks[0].Outputs[?OutputKey=='ClusterEndpoint'].OutputValue" --output text)
+          DOCDB_SECRET_ARN=$(aws cloudformation describe-stacks --region "$AWS_REGION" --stack-name "$DOCDB_STACK_NAME" \
+            --query "Stacks[0].Outputs[?OutputKey=='AdminSecretArn'].OutputValue" --output text)
+          DOCDB_SG_ID=$(aws cloudformation describe-stacks --region "$AWS_REGION" --stack-name "$DOCDB_STACK_NAME" \
+            --query "Stacks[0].Outputs[?OutputKey=='SecurityGroupId'].OutputValue" --output text)
+
+          echo "private_subnets=$PRIVATE_SUBNETS" >> $GITHUB_OUTPUT
+          echo "public_subnets=$PUBLIC_CSV" >> $GITHUB_OUTPUT
+          echo "docdb_endpoint=$DOCDB_ENDPOINT" >> $GITHUB_OUTPUT
+          echo "docdb_secret_arn=$DOCDB_SECRET_ARN" >> $GITHUB_OUTPUT
+          echo "docdb_sg_id=$DOCDB_SG_ID" >> $GITHUB_OUTPUT
+
+      - name: Deploy CloudFormation stack
+        run: |
+          STACK_NAME="user-backend-${{ steps.env.outputs.env_name }}"
+          aws cloudformation deploy \
+            --region "$AWS_REGION" \
+            --stack-name "$STACK_NAME" \
+            --template-file "$CFN_TEMPLATE" \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --parameter-overrides \
+              EnvironmentName=${{ steps.env.outputs.env_name }} \
+              VpcId=${{ env.VPC_ID }} \
+              PublicSubnets=${{ steps.discover.outputs.public_subnets }} \
+              PrivateSubnets=${{ steps.discover.outputs.private_subnets }} \
+              ImageUri=${{ steps.image.outputs.image_uri }} \
+              ContainerPort=3000 \
+              Cpu=256 \
+              Memory=512 \
+              AwsRegion=${{ env.AWS_REGION }} \
+              HealthCheckPath=/health \
+              DocDBEndpoint=${{ steps.discover.outputs.docdb_endpoint }} \
+              DocDBUsername=docdbadmin \
+              DocDBSecretArn=${{ steps.discover.outputs.docdb_secret_arn }} \
+              DocDBSecurityGroupId=${{ steps.discover.outputs.docdb_sg_id }}

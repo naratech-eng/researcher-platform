@@ -1,0 +1,276 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: ECS Fargate + ALB for user-backend (Bun) using existing VPC and Amazon DocumentDB.
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    AllowedValues: [development, production]
+    Description: Deployment environment name.
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: Existing VPC ID to deploy into.
+  PublicSubnets:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Two or more public subnets for the ALB.
+  PrivateSubnets:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Two or more private subnets for ECS tasks.
+  ImageUri:
+    Type: String
+    Description: Full ECR image URI, e.g. 123456789012.dkr.ecr.us-east-2.amazonaws.com/user-backend:sha-abc123.
+  ContainerPort:
+    Type: Number
+    Default: 3000
+  Cpu:
+    Type: String
+    Default: '256'
+    AllowedValues: ['256', '512', '1024']
+  Memory:
+    Type: String
+    Default: '512'
+    AllowedValues: ['512', '1024', '2048']
+  DesiredCountDev:
+    Type: Number
+    Default: 1
+  DesiredCountProd:
+    Type: Number
+    Default: 2
+  AwsRegion:
+    Type: String
+    Default: us-east-2
+  HealthCheckPath:
+    Type: String
+    Default: /health
+  DocDBEndpoint:
+    Type: String
+    Description: DocumentDB/Elastic endpoint hostname (no scheme), e.g. user-data-docdb-elastic-...docdb-elastic.amazonaws.com
+  DocDBUsername:
+    Type: String
+    Default: docdbadmin
+  DocDBSecretArn:
+    Type: String
+    Description: Secrets Manager ARN for DocumentDB admin password (string value).
+  JwtSecretArn:
+    Type: String
+    Default: ''
+    Description: Optional Secrets Manager ARN for JWT secret. If blank, a default placeholder is used.
+  DocDBSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: Security Group ID of the existing DocumentDB cluster to allow access from ECS service.
+
+Conditions:
+  IsProd: !Equals [!Ref EnvironmentName, production]
+  HasJwtSecret: !Not [!Equals [!Ref JwtSecretArn, ""]]
+
+Mappings:
+  EnvSettings:
+    development:
+      LogRetention: 7
+    production:
+      LogRetention: 30
+
+Resources:
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /ecs/user-backend-${EnvironmentName}
+      RetentionInDays: !FindInMap [EnvSettings, !Ref EnvironmentName, LogRetention]
+
+  Cluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub user-backend-${EnvironmentName}
+
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ALB SG for user-backend
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+
+  ServiceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ECS service SG for user-backend
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref ContainerPort
+          ToPort: !Ref ContainerPort
+          SourceSecurityGroupId: !Ref ALBSecurityGroup
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub user-backend-${EnvironmentName}
+      Scheme: internet-facing
+      SecurityGroups: [!Ref ALBSecurityGroup]
+      Subnets: !Ref PublicSubnets
+      Type: application
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub userb-${EnvironmentName}
+      Port: !Ref ContainerPort
+      Protocol: HTTP
+      TargetType: ip
+      VpcId: !Ref VpcId
+      HealthCheckEnabled: true
+      HealthCheckPath: !Ref HealthCheckPath
+      Matcher:
+        HttpCode: 200
+
+  HttpListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
+
+  TaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+  TaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ReadDocDBSecret
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource:
+                  - !Ref DocDBSecretArn
+        - PolicyName: ReadJwtSecretOptional
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource: !If [HasJwtSecret, !Ref JwtSecretArn, !Ref "AWS::NoValue"]
+
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub user-backend-${EnvironmentName}
+      Cpu: !Ref Cpu
+      Memory: !Ref Memory
+      NetworkMode: awsvpc
+      RequiresCompatibilities: [FARGATE]
+      ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt TaskRole.Arn
+      ContainerDefinitions:
+        - Name: user-backend
+          Image: !Ref ImageUri
+          Essential: true
+          PortMappings:
+            - ContainerPort: !Ref ContainerPort
+              Protocol: tcp
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref LogGroup
+              awslogs-region: !Ref AwsRegion
+              awslogs-stream-prefix: user-backend
+          Environment:
+            - Name: AWS_REGION
+              Value: !Ref AwsRegion
+            - Name: DB_NAME
+              Value: animal_genetics
+            - Name: DOCUMENTDB_ENDPOINT
+              Value: !Ref DocDBEndpoint
+            - Name: DOCUMENTDB_PORT
+              Value: '27017'
+            - Name: DOCUMENTDB_USERNAME
+              Value: !Ref DocDBUsername
+            - Name: DOCDB_ELASTIC_ADMIN_SECRET_ARN
+              Value: !Ref DocDBSecretArn
+            - Name: PORT
+              Value: !Sub "${ContainerPort}"
+            - Name: DOCUMENTDB_TLS
+              Value: 'true'
+            - Name: DOCUMENTDB_CA_FILE
+              Value: /etc/ssl/certs/rds-global-bundle.pem
+          Secrets:
+            - !If
+              - HasJwtSecret
+              - Name: JWT_SECRET
+                ValueFrom: !Ref JwtSecretArn
+              - !Ref "AWS::NoValue"
+
+  Service:
+    Type: AWS::ECS::Service
+    DependsOn: HttpListener
+    Properties:
+      ServiceName: !Sub user-backend-${EnvironmentName}
+      Cluster: !Ref Cluster
+      DesiredCount: !If [IsProd, !Ref DesiredCountProd, !Ref DesiredCountDev]
+      LaunchType: FARGATE
+      PlatformVersion: LATEST
+      DeploymentConfiguration:
+        DeploymentCircuitBreaker:
+          Enable: true
+          Rollback: true
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups: [!Ref ServiceSecurityGroup]
+          Subnets: !Ref PrivateSubnets
+      LoadBalancers:
+        - TargetGroupArn: !Ref TargetGroup
+          ContainerName: user-backend
+          ContainerPort: !Ref ContainerPort
+
+  DocDBIngressFromService:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref DocDBSecurityGroupId
+      IpProtocol: tcp
+      FromPort: 27017
+      ToPort: 27017
+      SourceSecurityGroupId: !Ref ServiceSecurityGroup
+
+Outputs:
+  LoadBalancerDNS:
+    Description: Public DNS name of the ALB
+    Value: !GetAtt LoadBalancer.DNSName
+  ServiceSecurityGroupId:
+    Description: ECS Service Security Group ID (allow this to access DocDB on 27017)
+    Value: !Ref ServiceSecurityGroup
+  ClusterName:
+    Description: ECS Cluster Name
+    Value: !Ref Cluster

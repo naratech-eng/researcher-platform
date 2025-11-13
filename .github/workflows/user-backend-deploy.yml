@@ -1,11 +1,7 @@
 name: Deploy user-backend (Copilot)
 
 on:
-  push:
-    branches: ["dev", "naratech"]
-    paths:
-      - 'user-backend/**'
-      - '.github/workflows/user-backend-deploy.yml'
+  workflow_dispatch:
 
 env:
   AWS_REGION: us-east-2
