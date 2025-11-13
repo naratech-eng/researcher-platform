@@ -60,14 +60,26 @@ jobs:
             --username AWS \
             --password-stdin "${{ steps.acct.outputs.account_id }}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 
-      - name: Build and push Docker image
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker image (multi-arch)
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: user-backend
+          file: user-backend/Dockerfile
+          push: true
+          tags: ${{ steps.acct.outputs.account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO_NAME }}:${{ github.sha }}
+          platforms: linux/amd64,linux/arm64
+
+      - name: Set image output
         id: image
         run: |
-          IMAGE_TAG=${GITHUB_SHA}
-          ECR_URI="${{ steps.acct.outputs.account_id }}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO_NAME}"
-          docker build -t "$ECR_URI:$IMAGE_TAG" -f user-backend/Dockerfile user-backend
-          docker push "$ECR_URI:$IMAGE_TAG"
-          echo "image_uri=$ECR_URI:$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "image_uri=${{ steps.acct.outputs.account_id }}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO_NAME}:${GITHUB_SHA}" >> $GITHUB_OUTPUT
 
       - name: Discover VPC subnets and DocDB resources
         id: discover
@@ -110,6 +122,11 @@ jobs:
           echo "docdb_secret_arn=$DOCDB_SECRET_ARN" >> $GITHUB_OUTPUT
           echo "docdb_sg_id=$DOCDB_SG_ID" >> $GITHUB_OUTPUT
 
+      - name: Determine CPU architecture
+        id: arch
+        run: |
+          echo "cpu_arch=X86_64" >> $GITHUB_OUTPUT
+
       - name: Deploy CloudFormation stack
         run: |
           STACK_NAME="user-backend-${{ steps.env.outputs.env_name }}"
@@ -127,6 +144,7 @@ jobs:
               ContainerPort=3000 \
               Cpu=256 \
               Memory=512 \
+              CpuArchitecture=${{ steps.arch.outputs.cpu_arch }} \
               AwsRegion=${{ env.AWS_REGION }} \
               HealthCheckPath=/health \
               DocDBEndpoint=${{ steps.discover.outputs.docdb_endpoint }} \
