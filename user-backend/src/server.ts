@@ -6,13 +6,32 @@ import { register, login, metamaskAuth, didAuth, getProfile } from "./routes/aut
 const PORT = Number(process.env.PORT || "3001");
 const HOST = process.env.HOST || "0.0.0.0";
 
+const DEFAULT_ALLOWED_ORIGINS = [
+  "http://localhost:3000",
+  "http://localhost:3001",
+];
+
+const EXTRA_ALLOWED_ORIGINS = (process.env.CORS_ALLOWED_ORIGINS || "")
+  .split(",")
+  .map((o) => o.trim())
+  .filter((o) => o.length > 0);
+
+const ALLOWED_ORIGINS = [...DEFAULT_ALLOWED_ORIGINS, ...EXTRA_ALLOWED_ORIGINS];
+
 function corsHeaders(origin?: string) {
-  return {
-    "Access-Control-Allow-Origin": origin || "*",
+  const headers: Record<string, string> = {
     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Access-Control-Allow-Credentials": "true",
   };
+
+  if (origin) {
+    if (ALLOWED_ORIGINS.includes(origin) || origin.endsWith(".amplifyapp.com")) {
+      headers["Access-Control-Allow-Origin"] = origin;
+    }
+  }
+
+  return headers;
 }
 
 async function startServer() {
