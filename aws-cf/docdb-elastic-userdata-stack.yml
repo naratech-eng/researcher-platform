@@ -115,7 +115,7 @@ Resources:
     Properties:
       AdminUserName: !Ref AdminUserName
       # When AuthType is SECRET_ARN, AdminUserPassword must be the ARN of a Secrets Manager secret containing the password string.
-      AdminUserPassword: !GetAtt DocDBElasticAdminSecret.Arn
+      AdminUserPassword: !Ref DocDBElasticAdminSecret
       AuthType: SECRET_ARN
       ClusterName: !Ref ClusterName
       ShardCapacity: !Ref ShardCapacity
@@ -145,7 +145,7 @@ Outputs:
 
   AdminSecretArn:
     Description: Secrets Manager ARN holding the admin password (plain string)
-    Value: !GetAtt DocDBElasticAdminSecret.Arn
+    Value: !Ref DocDBElasticAdminSecret
 
   SecurityGroupId:
     Description: Security Group ID for the cluster
