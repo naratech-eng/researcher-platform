@@ -88,6 +88,11 @@ async function createIndexes() {
   if (!db) return;
 
   try {
+    const existing = await db.listCollections({ name: 'users' }).toArray();
+    if (existing.length === 0) {
+      await db.createCollection('users');
+    }
+
     const usersCollection = db.collection('users');
 
     await usersCollection.createIndex({ email: 1 }, { unique: true });

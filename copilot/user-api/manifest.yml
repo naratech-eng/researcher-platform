@@ -30,19 +30,22 @@ variables:
   DOCUMENTDB_PORT: 27017
   DOCUMENTDB_ENDPOINT: user-data-docdb-elastic-091957636975.us-east-2.docdb-elastic.amazonaws.com
   DOCUMENTDB_USERNAME: docdbadmin
-  DOCDB_ELASTIC_ADMIN_SECRET_ARN: arn:aws:secretsmanager:us-east-2:091957636975:secret:genetics-docdb-elastic-DocDBElasticAdminPassword-JQ9gao
+  DOCDB_ELASTIC_ADMIN_SECRET_ARN: arn:aws:secretsmanager:us-east-2:091957636975:secret:genetics-docdb-elastic-DocDBElasticAdminPassword-e0Khu1
 
 secrets:
   JWT_SECRET: JWT_SECRET
+  DOCUMENTDB_URI: DOCUMENTDB_URI
 
 environments:
   dev:
     secrets:
       JWT_SECRET: /copilot/naratech/dev/secrets/JWT_SECRET
+      DOCUMENTDB_URI: /copilot/naratech/dev/secrets/DOCUMENTDB_URI
     count: 1
   prod:
     secrets:
       JWT_SECRET: /copilot/naratech/prod/secrets/JWT_SECRET
+      DOCUMENTDB_URI: /copilot/naratech/prod/secrets/DOCUMENTDB_URI
     count: 2
     cpu: 512
     memory: 1024
