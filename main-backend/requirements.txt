@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+langchain
+chromadb
+faiss-cpu
+sqlalchemy
+psycopg[binary]
+plotly
+pandas
+pytest
+httpx

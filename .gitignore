@@ -240,3 +240,18 @@ frontend/.next
 *.sln
 *.sw?
 # OS specific
+
+# remove plan 
+plan
+plan/
+plan/*
+
+#FastAPI
+main-backend/venv
+main-backend/venv/
+main-backend/venv/*
+
+#UserBackend
+user-backend/venv
+user-backend/venv/
+user-backend/venv/*
