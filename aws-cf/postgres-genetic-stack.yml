@@ -1,0 +1,189 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Amazon RDS for PostgreSQL instance for genetic data in an existing VPC,
+  with public access enabled by default for development (security-group
+  rules can be tightened later).
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC where the PostgreSQL instance will be deployed.
+
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: One or more subnet IDs in the VPC for the DB subnet group.
+
+  DBInstanceIdentifier:
+    Type: String
+    Default: genetic-pg
+    Description: DB instance identifier.
+
+  DBName:
+    Type: String
+    Default: genetic_db
+    Description: Initial database name to create.
+
+  DBPort:
+    Type: Number
+    Default: 5432
+    Description: PostgreSQL port.
+
+  DBInstanceClass:
+    Type: String
+    Default: db.t4g.micro
+    AllowedValues:
+      - db.t4g.micro
+      - db.t3.micro
+      - db.t3.small
+      - db.t3.medium
+      - db.m6g.large
+    Description: RDS instance class.
+
+  MasterUsername:
+    Type: String
+    Default: genetic_admin
+    Description: Master username for PostgreSQL.
+
+  AllocatedStorage:
+    Type: Number
+    Default: 20
+    Description: Allocated storage in GiB.
+
+  BackupRetentionPeriod:
+    Type: Number
+    Default: 7
+    Description: Number of days to retain automated backups.
+
+  MultiAZ:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: Whether to deploy a Multi-AZ instance.
+
+  DeletionProtection:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: Enable deletion protection on the DB instance.
+
+  AllowedCidr:
+    Type: String
+    Default: 0.0.0.0/0
+    Description: CIDR allowed to connect to PostgreSQL port. Use 0.0.0.0/0 only for temporary dev.
+
+  AppSecurityGroupId:
+    Type: String
+    Default: ""
+    Description: Optional security group ID for an application (e.g., ECS service) that needs DB access.
+
+Conditions:
+  HasAppSG: !Not [!Equals [!Ref AppSecurityGroupId, ""]]
+  HasAllowedCidr: !Not [!Equals [!Ref AllowedCidr, ""]]
+  MultiAZEnabled: !Equals [!Ref MultiAZ, 'true']
+  DeletionProtectionEnabled: !Equals [!Ref DeletionProtection, 'true']
+
+Resources:
+  PostgresSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for RDS PostgreSQL instance
+      VpcId: !Ref VpcId
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-PostgresSG"
+
+  PostgresIngressFromAppSG:
+    Condition: HasAppSG
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref PostgresSecurityGroup
+      IpProtocol: tcp
+      FromPort: !Ref DBPort
+      ToPort: !Ref DBPort
+      SourceSecurityGroupId: !Ref AppSecurityGroupId
+
+  PostgresIngressFromCidr:
+    Condition: HasAllowedCidr
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref PostgresSecurityGroup
+      IpProtocol: tcp
+      FromPort: !Ref DBPort
+      ToPort: !Ref DBPort
+      CidrIp: !Ref AllowedCidr
+
+  PostgresSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Subnet group for RDS PostgreSQL
+      SubnetIds: !Ref SubnetIds
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-PostgresSubnetGroup"
+
+  PostgresMasterSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub "${AWS::StackName}-PostgresMasterSecret"
+      Description: Master credentials for PostgreSQL
+      GenerateSecretString:
+        SecretStringTemplate: !Sub '{"username":"${MasterUsername}"}'
+        GenerateStringKey: password
+        PasswordLength: 32
+        ExcludeCharacters: '"@/\'
+        ExcludePunctuation: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-PostgresMasterSecret"
+
+  PostgresDBInstance:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
+    UpdateReplacePolicy: Snapshot
+    Properties:
+      DBInstanceIdentifier: !Ref DBInstanceIdentifier
+      DBName: !Ref DBName
+      Engine: postgres
+      Port: !Ref DBPort
+      DBInstanceClass: !Ref DBInstanceClass
+      AllocatedStorage: !Ref AllocatedStorage
+      MasterUsername: !Ref MasterUsername
+      MasterUserPassword: !Sub "{{resolve:secretsmanager:${PostgresMasterSecret}:SecretString:password}}"
+      VPCSecurityGroups:
+        - !Ref PostgresSecurityGroup
+      DBSubnetGroupName: !Ref PostgresSubnetGroup
+      PubliclyAccessible: true
+      BackupRetentionPeriod: !Ref BackupRetentionPeriod
+      MultiAZ: !If [MultiAZEnabled, true, false]
+      StorageEncrypted: true
+      DeletionProtection: !If [DeletionProtectionEnabled, true, false]
+      AutoMinorVersionUpgrade: true
+      CopyTagsToSnapshot: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-PostgresInstance"
+
+Outputs:
+  DBEndpointAddress:
+    Description: RDS PostgreSQL endpoint address
+    Value: !GetAtt PostgresDBInstance.Endpoint.Address
+
+  DBEndpointPort:
+    Description: RDS PostgreSQL endpoint port
+    Value: !GetAtt PostgresDBInstance.Endpoint.Port
+
+  DBName:
+    Description: Database name
+    Value: !Ref DBName
+
+  SecurityGroupId:
+    Description: Security group ID attached to the DB instance
+    Value: !Ref PostgresSecurityGroup
+
+  MasterSecretArn:
+    Description: Secrets Manager ARN for the master credentials
+    Value: !Ref PostgresMasterSecret
+
+  SubnetGroupName:
+    Description: DB subnet group name
+    Value: !Ref PostgresSubnetGroup
