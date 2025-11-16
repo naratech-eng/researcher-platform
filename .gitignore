@@ -261,3 +261,6 @@ database
 database/
 database/*
 
+#do not commit database migration files
+etl/migrate_to_postgres.py
+docs/databases/schema.sql
