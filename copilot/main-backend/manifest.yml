@@ -1,0 +1,63 @@
+# The manifest for the "main-backend" service.
+# Read the full specification for the "Load Balanced Web Service" type at:
+#  https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/
+
+# Your service name will be used in naming your resources like log groups, ECS services, etc.
+name: main-backend
+type: Load Balanced Web Service
+platform: linux/arm64
+
+
+image:
+  build:
+    dockerfile: main-backend/Dockerfile
+    context: main-backend
+  port: 8000
+
+
+http:
+  path: '/'
+  healthcheck:
+    path: '/api/health'
+    healthy_threshold: 2
+    unhealthy_threshold: 2
+    interval: 10s
+    timeout: 5s
+
+
+cpu: 256
+memory: 512
+count: 1
+
+
+variables:
+  MAIN_BACKEND_ENV: prod
+  MAIN_BACKEND_DB_HOST: genetic-pg.ct2eug022ja6.us-east-2.rds.amazonaws.com
+  MAIN_BACKEND_DB_PORT: 5432
+  MAIN_BACKEND_DB_NAME: genetic_db
+  MAIN_BACKEND_DB_USER: genetic_admin
+
+
+secrets:
+  MAIN_BACKEND_DB_PASSWORD: MAIN_BACKEND_DB_PASSWORD
+
+
+environments:
+  dev:
+    variables:
+      MAIN_BACKEND_ENV: dev
+    secrets:
+      MAIN_BACKEND_DB_PASSWORD: /copilot/naratech/dev/secrets/MAIN_BACKEND_DB_PASSWORD
+    count: 1
+  prod:
+    secrets:
+      MAIN_BACKEND_DB_PASSWORD: /copilot/naratech/prod/secrets/MAIN_BACKEND_DB_PASSWORD
+    count: 2
+    cpu: 512
+    memory: 1024
+    http:
+      healthcheck:
+        healthy_threshold: 3
+        unhealthy_threshold: 2
+        interval: 15s
+        timeout: 10s
