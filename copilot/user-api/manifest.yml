@@ -10,6 +10,7 @@ image:
 
 http:
   path: '/'
+  alias: 'user-api.naratech.ca'
   healthcheck:
     path: '/health'
     healthy_threshold: 2
@@ -20,6 +21,10 @@ http:
 cpu: 256
 memory: 512
 count: 1
+
+network:
+  vpc:
+    placement: 'public'
 
 variables:
   DB_NAME: animal_genetics

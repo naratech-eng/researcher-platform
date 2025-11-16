@@ -17,8 +17,9 @@ image:
 
 http:
   path: '/'
+  alias: 'main-api.naratech.ca'
   healthcheck:
-    path: '/api/health'
+    path: '/health'
     healthy_threshold: 2
     unhealthy_threshold: 2
     interval: 10s
@@ -28,6 +29,11 @@ http:
 cpu: 256
 memory: 512
 count: 1
+
+
+network:
+  vpc:
+    placement: 'public'
 
 
 variables:

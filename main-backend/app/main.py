@@ -18,5 +18,11 @@ async def root() -> dict:
     return {"service": "main-backend", "status": "ok"}
 
 
+@app.get("/health", tags=["health"])
+async def service_health() -> dict:
+    """Top-level health endpoint for load balancer checks."""
+    return {"status": "ok"}
+
+
 # Mount routers
 app.include_router(health_router, prefix="/api")
