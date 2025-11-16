@@ -255,3 +255,9 @@ main-backend/venv/*
 user-backend/venv
 user-backend/venv/
 user-backend/venv/*
+
+#Database
+database
+database/
+database/*
+
