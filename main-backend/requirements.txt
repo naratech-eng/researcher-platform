@@ -1,6 +1,9 @@
 fastapi
 uvicorn[standard]
 langchain
+langchain-core
+langchain-openai
+langchain-community
 chromadb
 faiss-cpu
 sqlalchemy

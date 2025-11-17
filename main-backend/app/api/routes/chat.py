@@ -5,6 +5,8 @@ from pydantic import BaseModel
 
 from app.core.config import get_settings
 from app.services.genetics_query import fetch_sample_animals
+from app.services.genetics_sql_agent import query_genetics_db_natural_language
+from app.services.langchain_summarizer import summarize_with_tables
 from app.services.llm_client import generate_llm_answer
 
 
@@ -56,22 +58,41 @@ async def chat_endpoint(payload: ChatRequest) -> ChatResponse:
     if last_user is None:
         answer = "No user message found in the conversation."
     else:
-        # Very simple intent detection for now: if the user mentions
-        # "animals" and "show"/"list", run the genetics sample query.
+        # Detect if the user is asking about the genetics database
         content_lower = last_user.content.lower()
-        if "animals" in content_lower and ("show" in content_lower or "list" in content_lower):
-            table = fetch_sample_animals(limit=20)
-            artifacts.tables.append(table)
-            answer = (
-                "Here is a small sample of animals from the genetics database. "
-                "Future versions will let you run richer, targeted analyses."
-            )
+        is_genetics_query = any(
+            keyword in content_lower
+            for keyword in ["database", "genetics", "animal", "trait", "breed", "query", "sql"]
+        )
+
+        if is_genetics_query:
+            # Use LangChain SQL Agent for natural language to SQL conversion
+            table = query_genetics_db_natural_language(last_user.content)
+            if table:
+                artifacts.tables.append(table)
+                answer = "Here are the results from the genetics database."
+            else:
+                # Fallback if agent fails
+                answer = (
+                    "I tried to query the genetics database but encountered an issue. "
+                    "Please try rephrasing your question."
+                )
         else:
             answer = f"You said: {last_user.content}"
 
     # Optionally let the LLM refine the answer when configured.
     settings = get_settings()
-    if settings.has_llm:
+    
+    # If LangChain summarizer is enabled and we have table artifacts,
+    # use it for data-aware responses
+    if settings.has_langchain_summarizer and artifacts.tables:
+        answer = summarize_with_tables(
+            user_question=last_user.content if last_user else "",
+            tables=artifacts.tables,
+            fallback_answer=answer,
+        )
+    # Otherwise fall back to basic LLM refinement if enabled
+    elif settings.has_llm:
         answer = generate_llm_answer(payload.messages, answer)
 
     return ChatResponse(

@@ -38,6 +38,11 @@ class Settings:
         self.use_llm_in_chat: bool = (
             os.getenv("MAIN_BACKEND_USE_LLM_IN_CHAT", "false").lower() == "true"
         )
+        # Feature flag for LangChain-based table summarization
+        # When enabled, LLM receives structured table data for richer explanations
+        self.use_langchain_summarizer: bool = (
+            os.getenv("MAIN_BACKEND_USE_LANGCHAIN_SUMMARIZER", "false").lower() == "true"
+        )
 
     @property
     def has_postgres(self) -> bool:
@@ -46,6 +51,10 @@ class Settings:
     @property
     def has_llm(self) -> bool:
         return bool(self.openai_api_key) and self.use_llm_in_chat
+
+    @property
+    def has_langchain_summarizer(self) -> bool:
+        return self.has_llm and self.use_langchain_summarizer
 
 
 @lru_cache()
