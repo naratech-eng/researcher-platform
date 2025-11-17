@@ -1,7 +1,0 @@
-# Ignore secrets and local env
-secrets/
-.env
-
-# Ignore initialization SQL placed for first-time import
-# Keep this ignored to avoid committing DB dumps
-db-init/
