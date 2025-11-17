@@ -246,12 +246,17 @@ plan
 plan/
 plan/*
 
-#FastAPI
+#FastAPI | main-backend
 main-backend/venv
 main-backend/venv/
 main-backend/venv/*
+main-backend/.env
+main-backend/.env.example
+main-backend/AWS_SECRETS_DEPLOYMENT.md
+main-backend/DEPLOYMENT_READY.md
+main-backend/LITERATURE_API_KEYS_SETUP.md
 
-#UserBackend
+#UserBackend | user-backend
 user-backend/venv
 user-backend/venv/
 user-backend/venv/*
@@ -264,3 +269,5 @@ database/*
 #do not commit database migration files
 etl/migrate_to_postgres.py
 docs/databases/schema.sql
+
+#deployment secrets

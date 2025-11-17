@@ -27,5 +27,5 @@ def test_chat_echoes_last_user_message() -> None:
     assert len(data["answer"]) > 0
     assert isinstance(data["answer"], str)
     # Should not have genetics artifacts
-    assert data["artifacts"] == {"tables": [], "charts": [], "files": []}
+    assert data["artifacts"] == {"tables": [], "charts": [], "files": [], "code_snippets": []}
     assert data["citations"] == []

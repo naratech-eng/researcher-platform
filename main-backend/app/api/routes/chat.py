@@ -28,6 +28,7 @@ class ChatArtifacts(BaseModel):
     tables: List[dict] = []
     charts: List[dict] = []
     files: List[dict] = []
+    code_snippets: List[dict] = []  # Copyable code blocks with language and content
 
 
 class ChatResponse(BaseModel):

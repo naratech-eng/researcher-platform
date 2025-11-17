@@ -13,3 +13,13 @@ pandas
 pytest
 httpx
 openai
+# Statistical analysis
+scikit-learn
+scipy
+statsmodels
+# Code formatting
+pygments
+# Scientific literature retrieval
+arxiv
+biopython  # For NCBI/PubMed access
+requests   # For Nature API

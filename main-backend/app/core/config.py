@@ -33,20 +33,40 @@ class Settings:
         # OpenAI / ChatGPT configuration (optional)
         self.openai_api_key: Optional[str] = os.getenv("OPENAI_API_KEY")
         self.openai_model: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+        
+        # Scientific literature API keys (optional)
+        self.ncbi_api_key: Optional[str] = os.getenv("NCBI_API_KEY")  # For PubMed access
+        self.nature_api_key: Optional[str] = os.getenv("NATURE_API_KEY")  # For Nature journals
+        self.ncbi_email: Optional[str] = os.getenv("NCBI_EMAIL")  # Required by NCBI API policy
         # Explicit feature flag so tests/dev can avoid hitting the LLM
-        # even when an API key is present.
+        # ALL FEATURES ENABLED BY DEFAULT - users can disable via env vars
         self.use_llm_in_chat: bool = (
-            os.getenv("MAIN_BACKEND_USE_LLM_IN_CHAT", "false").lower() == "true"
+            os.getenv("MAIN_BACKEND_USE_LLM_IN_CHAT", "true").lower() == "true"
         )
         # Feature flag for LangChain-based table summarization
         # When enabled, LLM receives structured table data for richer explanations
         self.use_langchain_summarizer: bool = (
-            os.getenv("MAIN_BACKEND_USE_LANGCHAIN_SUMMARIZER", "false").lower() == "true"
+            os.getenv("MAIN_BACKEND_USE_LANGCHAIN_SUMMARIZER", "true").lower() == "true"
         )
         # Feature flag for Plotly chart generation
         # When enabled, generates interactive chart JSON from query results
         self.use_charts: bool = (
-            os.getenv("MAIN_BACKEND_USE_CHARTS", "false").lower() == "true"
+            os.getenv("MAIN_BACKEND_USE_CHARTS", "true").lower() == "true"
+        )
+        # Feature flag for RAG (Retrieval-Augmented Generation)
+        # When enabled, retrieves scientific literature and docs to support answers
+        self.use_rag: bool = (
+            os.getenv("MAIN_BACKEND_USE_RAG", "true").lower() == "true"
+        )
+        # Feature flag for statistical analysis tools
+        # When enabled, provides regression, random forest, Q-Q plots, etc.
+        self.use_statistical_analysis: bool = (
+            os.getenv("MAIN_BACKEND_USE_STATISTICAL_ANALYSIS", "true").lower() == "true"
+        )
+        # Feature flag for code snippet support
+        # When enabled, returns formatted code blocks for copying
+        self.use_code_snippets: bool = (
+            os.getenv("MAIN_BACKEND_USE_CODE_SNIPPETS", "true").lower() == "true"
         )
 
     @property
@@ -64,6 +84,18 @@ class Settings:
     @property
     def has_charts(self) -> bool:
         return self.has_postgres and self.use_charts
+
+    @property
+    def has_rag(self) -> bool:
+        return self.has_llm and self.use_rag
+
+    @property
+    def has_statistical_analysis(self) -> bool:
+        return self.has_postgres and self.use_statistical_analysis
+
+    @property
+    def has_code_snippets(self) -> bool:
+        return self.use_code_snippets
 
 
 @lru_cache()

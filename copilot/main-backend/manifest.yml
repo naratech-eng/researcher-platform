@@ -51,6 +51,9 @@ variables:
 secrets:
   MAIN_BACKEND_DB_PASSWORD: MAIN_BACKEND_DB_PASSWORD
   OPENAI_API_KEY: OPENAI_API_KEY
+  NATURE_API_KEY: NATURE_API_KEY
+  NCBI_API_KEY: NCBI_API_KEY
+  NCBI_EMAIL: NCBI_EMAIL
 
 environments:
   dev:
@@ -59,11 +62,17 @@ environments:
     secrets:
       MAIN_BACKEND_DB_PASSWORD: /copilot/naratech/dev/secrets/MAIN_BACKEND_DB_PASSWORD
       OPENAI_API_KEY: /copilot/naratech/dev/secrets/OPENAI_API_KEY
+      NATURE_API_KEY: /copilot/naratech/dev/secrets/NATURE_API_KEY
+      NCBI_API_KEY: /copilot/naratech/dev/secrets/NCBI_API_KEY
+      NCBI_EMAIL: /copilot/naratech/dev/secrets/NCBI_EMAIL
     count: 1
   prod:
     secrets:
       MAIN_BACKEND_DB_PASSWORD: /copilot/naratech/prod/secrets/MAIN_BACKEND_DB_PASSWORD
       OPENAI_API_KEY: /copilot/naratech/prod/secrets/OPENAI_API_KEY
+      NATURE_API_KEY: /copilot/naratech/prod/secrets/NATURE_API_KEY
+      NCBI_API_KEY: /copilot/naratech/prod/secrets/NCBI_API_KEY
+      NCBI_EMAIL: /copilot/naratech/prod/secrets/NCBI_EMAIL
     count: 2
     cpu: 512
     memory: 1024
