@@ -30,9 +30,22 @@ class Settings:
         self.postgres_dsn: Optional[str] = dsn
         self.environment: str = os.getenv("MAIN_BACKEND_ENV", "dev")
 
+        # OpenAI / ChatGPT configuration (optional)
+        self.openai_api_key: Optional[str] = os.getenv("OPENAI_API_KEY")
+        self.openai_model: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+        # Explicit feature flag so tests/dev can avoid hitting the LLM
+        # even when an API key is present.
+        self.use_llm_in_chat: bool = (
+            os.getenv("MAIN_BACKEND_USE_LLM_IN_CHAT", "false").lower() == "true"
+        )
+
     @property
     def has_postgres(self) -> bool:
         return bool(self.postgres_dsn)
+
+    @property
+    def has_llm(self) -> bool:
+        return bool(self.openai_api_key) and self.use_llm_in_chat
 
 
 @lru_cache()

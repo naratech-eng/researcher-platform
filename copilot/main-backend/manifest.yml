@@ -42,11 +42,13 @@ variables:
   MAIN_BACKEND_DB_PORT: 5432
   MAIN_BACKEND_DB_NAME: genetic_db
   MAIN_BACKEND_DB_USER: genetic_admin
+  MAIN_BACKEND_USE_LLM_IN_CHAT: true
+  OPENAI_MODEL: gpt-4o-mini
 
 
 secrets:
   MAIN_BACKEND_DB_PASSWORD: MAIN_BACKEND_DB_PASSWORD
-
+  OPENAI_API_KEY: OPENAI_API_KEY
 
 environments:
   dev:
@@ -54,10 +56,12 @@ environments:
       MAIN_BACKEND_ENV: dev
     secrets:
       MAIN_BACKEND_DB_PASSWORD: /copilot/naratech/dev/secrets/MAIN_BACKEND_DB_PASSWORD
+      OPENAI_API_KEY: /copilot/naratech/dev/secrets/OPENAI_API_KEY
     count: 1
   prod:
     secrets:
       MAIN_BACKEND_DB_PASSWORD: /copilot/naratech/prod/secrets/MAIN_BACKEND_DB_PASSWORD
+      OPENAI_API_KEY: /copilot/naratech/prod/secrets/OPENAI_API_KEY
     count: 2
     cpu: 512
     memory: 1024
