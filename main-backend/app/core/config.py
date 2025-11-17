@@ -43,6 +43,11 @@ class Settings:
         self.use_langchain_summarizer: bool = (
             os.getenv("MAIN_BACKEND_USE_LANGCHAIN_SUMMARIZER", "false").lower() == "true"
         )
+        # Feature flag for Plotly chart generation
+        # When enabled, generates interactive chart JSON from query results
+        self.use_charts: bool = (
+            os.getenv("MAIN_BACKEND_USE_CHARTS", "false").lower() == "true"
+        )
 
     @property
     def has_postgres(self) -> bool:
@@ -55,6 +60,10 @@ class Settings:
     @property
     def has_langchain_summarizer(self) -> bool:
         return self.has_llm and self.use_langchain_summarizer
+
+    @property
+    def has_charts(self) -> bool:
+        return self.has_postgres and self.use_charts
 
 
 @lru_cache()
