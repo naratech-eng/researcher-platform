@@ -2,20 +2,25 @@
 
 import { useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
-import { getCognitoUser } from '@/services/cognitoAuth';
-import { configureAmplify } from '@/lib/amplify-config';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { setUser, setLoading } = useAuthStore();
+  const { setLoading, setUser } = useAuthStore();
 
   useEffect(() => {
-    configureAmplify();
-
     const checkAuth = async () => {
       setLoading(true);
-      const user = await getCognitoUser();
-      setUser(user);
-      setLoading(false);
+      try {
+        const token = localStorage.getItem('token');
+        const userStr = localStorage.getItem('user');
+        if (token && userStr) {
+          const user = JSON.parse(userStr);
+          setUser(user);
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     checkAuth();

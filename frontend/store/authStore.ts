@@ -15,19 +15,27 @@ export const useAuthStore = create<AuthStore>((set) => ({
   isLoading: false,
   error: null,
 
-  setUser: (user) => set({
-    user,
-    isAuthenticated: !!user,
-    error: null
-  }),
+  setUser: (user) => {
+    if (user && typeof window !== 'undefined') {
+      localStorage.setItem('user', JSON.stringify(user));
+    }
+    set({
+      user,
+      isAuthenticated: !!user,
+      error: null
+    });
+  },
 
   setLoading: (isLoading) => set({ isLoading }),
 
   setError: (error) => set({ error, isLoading: false }),
 
   login: (user, token) => {
-    if (token && typeof window !== 'undefined') {
-      localStorage.setItem('token', token);
+    if (typeof window !== 'undefined') {
+      if (token) {
+        localStorage.setItem('token', token);
+      }
+      localStorage.setItem('user', JSON.stringify(user));
     }
     set({
       user,
@@ -40,6 +48,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   logout: () => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
     }
     set({
       user: null,
