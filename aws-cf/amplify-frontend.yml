@@ -119,28 +119,12 @@ Resources:
                     - nvm install -s $NODE_VERSION || echo "nvm install skipped"
                     - nvm use $NODE_VERSION || echo "nvm use skipped"
                     - corepack enable || true
-                    - if command -v pnpm >/dev/null 2>&1; then export USE_PNPM=1; else export USE_PNPM=0; fi
-                    - |
-                      if [ "$USE_PNPM" = "1" ]; then
-                        pnpm --version || true
-                        pnpm install --frozen-lockfile || pnpm install
-                      else
-                        if [ -f package-lock.json ]; then
-                          npm ci
-                        else
-                          npm install
-                        fi
-                      fi
+                    - npm ci
                 build:
                   commands:
-                    - |
-                      if [ "$USE_PNPM" = "1" ]; then
-                        pnpm run build
-                      else
-                        npm run build
-                      fi
+                    - npm run build
               artifacts:
-                baseDirectory: .next
+                baseDirectory: dist
                 files:
                   - '**/*'
               cache:
@@ -148,7 +132,6 @@ Resources:
                   - node_modules/**/*
             environment:
               variables:
-                NEXT_TELEMETRY_DISABLED: '1'
                 NODE_VERSION: '${NodeVersion}'
 
   MainBranch:
