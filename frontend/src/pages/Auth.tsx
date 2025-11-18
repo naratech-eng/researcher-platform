@@ -5,10 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Sparkles, Mail, Lock, User, Eye, EyeOff, ArrowRight, Wallet } from "lucide-react";
+import { Sparkles, Mail, Lock, User, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { connectMetaMask, isMetaMaskInstalled, signMessageWithMetaMask } from "@/lib/web3";
@@ -24,9 +23,7 @@ const signupSchema = z.object({
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
   confirmPassword: z.string(),
   fullName: z.string().trim().min(2, { message: "Name must be at least 2 characters" }).max(100),
-  role: z.enum(["researcher", "farmer", "student"], { 
-    errorMap: () => ({ message: "Please select a role" }) 
-  }),
+  role: z.enum(["researcher", "farmer", "student"] as const),
   acceptTerms: z.boolean().refine((val) => val === true, {
     message: "You must accept the terms and conditions",
   }),
