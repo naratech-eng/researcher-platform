@@ -8,12 +8,14 @@ returned as Plotly JSON that can be rendered in Next.js with react-plotly.js.
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import plotly.utils
+
+from app.services.llm_client import generate_sample_chart_dataset
 
 
 def generate_chart_from_query_result(
@@ -239,3 +241,29 @@ def generate_chart_from_genetics_query(
         )
     except Exception:
         return None
+
+
+def generate_sample_chart_artifact(
+    user_question: str,
+) -> Optional[Tuple[Dict[str, Any], Dict[str, Any]]]:
+    """Return a sample table + chart artifact when real data is unavailable."""
+
+    dataset = generate_sample_chart_dataset(user_question)
+    if not dataset:
+        return None
+
+    chart = generate_chart_from_query_result(
+        data=dataset["rows"],
+        columns=dataset["columns"],
+        chart_type=dataset["chart_type"],
+        title=dataset["title"],
+    )
+
+    table = {
+        "id": "sample_chart_data",
+        "title": dataset["title"],
+        "columns": dataset["columns"],
+        "rows": dataset["rows"],
+    }
+
+    return table, chart

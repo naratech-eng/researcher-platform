@@ -7,7 +7,10 @@ from app.core.config import get_settings
 from app.services.genetics_query import fetch_sample_animals
 from app.services.genetics_sql_agent import query_genetics_db_natural_language
 from app.services.genetics_sql_agent_structured import execute_sql_query_for_chart
-from app.services.genetics_chart import generate_chart_from_genetics_query
+from app.services.genetics_chart import (
+    generate_chart_from_genetics_query,
+    generate_sample_chart_artifact,
+)
 from app.services.langchain_summarizer import summarize_with_tables
 from app.services.llm_client import generate_llm_answer
 from app.services.rag_literature import retrieve_literature_for_question
@@ -153,18 +156,29 @@ async def chat_endpoint(payload: ChatRequest) -> ChatResponse:
                     answer = "Here are the results from the genetics database."
                 sql_answered = True
             else:
-                # Fall back to text-based SQL agent
-                table = query_genetics_db_natural_language(last_user.content)
-                if table:
-                    artifacts.tables.append(table)
-                    answer = "Here are the results from the genetics database."
-                    sql_answered = True
-                else:
-                    # Fallback if agent fails
-                    answer = (
-                        "I tried to query the genetics database but encountered an issue. "
-                        "Please try rephrasing your question."
-                    )
+                sample_chart_used = False
+                if wants_chart and settings.has_charts:
+                    sample = generate_sample_chart_artifact(last_user.content)
+                    if sample:
+                        sample_table, sample_chart = sample
+                        artifacts.tables.append(sample_table)
+                        artifacts.charts.append(sample_chart)
+                        answer = "Here is a sample Plotly chart using representative data." 
+                        sql_answered = False
+                        sample_chart_used = True
+                if not sample_chart_used:
+                    # Fall back to text-based SQL agent
+                    table = query_genetics_db_natural_language(last_user.content)
+                    if table:
+                        artifacts.tables.append(table)
+                        answer = "Here are the results from the genetics database."
+                        sql_answered = True
+                    else:
+                        # Fallback if agent fails
+                        answer = (
+                            "I tried to query the genetics database but encountered an issue. "
+                            "Please try rephrasing your question."
+                        )
         elif not wants_literature:
             answer = f"You said: {last_user.content}"
 
