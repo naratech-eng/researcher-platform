@@ -14,7 +14,7 @@ Parameters:
   PlatformType:
     Type: String
     AllowedValues: [WEB, WEB_DYNAMIC, WEB_COMPUTE]
-    Default: WEB_COMPUTE
+    Default: WEB
   NodeVersion:
     Type: String
     Default: "22"
