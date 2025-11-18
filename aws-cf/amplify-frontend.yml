@@ -174,10 +174,10 @@ Resources:
       - DevBranch
     Properties:
       AppId: !If [UseExistingApp, !Ref ExistingAppId, !GetAtt AmplifyApp.AppId]
-      DomainName: !Sub "${ProdSubdomainPrefix}.${DomainName}"
+      DomainName: !Ref DomainName
       SubDomainSettings:
         - BranchName: !Ref BranchDevName
-          Prefix: !Ref DevSubdomainPrefix
+          Prefix: !Sub "${DevSubdomainPrefix}-${ProdSubdomainPrefix}"
 
   AmplifyServiceRole:
     Type: AWS::IAM::Role
