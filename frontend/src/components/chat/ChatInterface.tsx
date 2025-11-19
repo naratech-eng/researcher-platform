@@ -112,7 +112,7 @@ export function ChatInterface() {
     let index = streamingState.currentText.length;
     const streamId = streamingState.id;
     const fullText = streamingState.fullText;
-    const speedMultiplier = 3;
+    const speedMultiplier = 4;
     const interval = setInterval(() => {
       index = Math.min(index + speedMultiplier, characters.length);
       const progress = characters.length ? index / characters.length : 1;
@@ -352,109 +352,144 @@ export function ChatInterface() {
       ) : (
         <div className="flex-1 overflow-y-auto px-6">
           <div className="mx-auto flex max-w-4xl flex-col gap-4 py-4">
-            {messages.map((message) => (
-              <div key={message.id} className="space-y-3">
-                <Card
-                  className={`${
-                    message.role === "user"
-                      ? "border border-border/40 bg-muted/60"
-                      : "border border-border/30 bg-background/40"
-                  } p-3 shadow-none`}
-                >
-                  {message.role === "user" ? (
-                    <p className="whitespace-pre-wrap text-sm text-foreground">{message.content}</p>
-                  ) : (
-                    <div className="prose prose-sm max-w-none dark:prose-invert">
-                      <MarkdownRenderer content={message.content} />
-                    </div>
-                  )}
-                </Card>
-                
-                {/* Display artifacts for this specific message */}
-                {(() => {
-                  if (message.role !== "assistant" || !message.artifacts) return null;
-                  
-                  const artifacts = message.artifacts as any;
-                  if (typeof artifacts !== 'object' || Array.isArray(artifacts)) return null;
-                  
-                  const hasTables = artifacts.tables?.length > 0;
-                  const hasCharts = artifacts.charts?.length > 0;
-                  
-                  if (!hasTables && !hasCharts) return null;
-                  
+            {messages.map((message) => {
+              const isAssistant = message.role === "assistant";
+              let artifacts: any = null;
+              let hasTables = false;
+              let hasCharts = false;
+              let tableExplanation = "";
+
+              if (isAssistant && message.artifacts && typeof message.artifacts === "object" && !Array.isArray(message.artifacts)) {
+                artifacts = message.artifacts as any;
+                hasTables = Array.isArray(artifacts.tables) && artifacts.tables.length > 0;
+                hasCharts = Array.isArray(artifacts.charts) && artifacts.charts.length > 0;
+                tableExplanation = artifacts.table_explanation || "";
+              }
+
+              const renderTables = () => {
+                if (!artifacts || !hasTables) return null;
+
+                const isNumberColumn = (col: string, idx: number) => {
+                  // First column is a number column if it's "#", "No", "Rank", etc.
+                  return idx === 0 && ["#", "no", "number", "rank", "row_number"].includes(col.toLowerCase());
+                };
+
+                return artifacts.tables.map((table: TableArtifact) => {
+                  const shouldHighlightNumber = table.render_hints?.highlight_numbers ?? false;
+                  const isSingleResultColumn =
+                    Array.isArray(table.columns) &&
+                    table.columns.length === 1 &&
+                    typeof table.columns[0] === "string" &&
+                    table.columns[0].toLowerCase() === "result";
+
+                  if (isSingleResultColumn) {
+                    return null;
+                  }
+
                   return (
+                    <div
+                      key={table.id}
+                      className="rounded-lg border border-border/30 bg-muted/20 p-3 text-sm"
+                    >
+                      <div className="mb-2 flex items-center justify-between">
+                        <div className="font-medium text-muted-foreground">{table.title || "Table"}</div>
+                        {table.render_hints?.is_aggregation && (
+                          <Badge variant="outline" className="text-xs">
+                            Aggregated Data
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full border-collapse text-xs">
+                          <thead>
+                            <tr className="border-b border-border/40">
+                              {table.columns.map((col: string, colIdx: number) => (
+                                <th
+                                  key={colIdx}
+                                  className={`px-2 py-1.5 text-left font-medium ${
+                                    isNumberColumn(col, colIdx)
+                                      ? "w-12 text-center text-primary"
+                                      : ""
+                                  }`}
+                                >
+                                  {col}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {table.rows.map((row: any[], rowIdx: number) => (
+                              <tr
+                                key={rowIdx}
+                                className="border-b border-border/20 last:border-0 hover:bg-muted/30 transition-colors"
+                              >
+                                {row.map((cell: any, cellIdx: number) => (
+                                  <td
+                                    key={cellIdx}
+                                    className={`px-2 py-1.5 ${
+                                      isNumberColumn(table.columns[cellIdx], cellIdx)
+                                        ? "text-center font-semibold text-primary"
+                                        : shouldHighlightNumber && typeof cell === "number"
+                                        ? "font-mono font-medium"
+                                        : ""
+                                    }`}
+                                  >
+                                    {String(cell)}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      {table.render_hints?.show_totals && table.rows.length > 0 && (
+                        <div className="mt-2 text-xs text-muted-foreground">
+                          Total rows: {table.rows.length}
+                        </div>
+                      )}
+                    </div>
+                  );
+                });
+              };
+
+              return (
+                <div key={message.id} className="space-y-3">
+                  <Card
+                    className={`${
+                      message.role === "user"
+                        ? "border border-border/40 bg-muted/60"
+                        : "border border-border/30 bg-background/40"
+                    } p-3 shadow-none`}
+                  >
+                    {message.role === "user" ? (
+                      <p className="whitespace-pre-wrap text-sm text-foreground">{message.content}</p>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="prose prose-sm max-w-none dark:prose-invert">
+                          <MarkdownRenderer content={message.content} />
+                        </div>
+                        {/* Display artifacts for this specific message */}
+                        {renderTables()}
+                        {/* Display table explanation after tables */}
+                        {tableExplanation && (
+                          <div className="prose prose-sm max-w-none dark:prose-invert mt-3 pt-3 border-t border-border/30">
+                            <MarkdownRenderer content={tableExplanation} />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </Card>
+
+                  {/* Display charts for this specific message */}
+                  {hasCharts && artifacts && (
                     <CollapsibleSection title="Query Results" defaultOpen={false}>
                       <div className="space-y-3">
-                        {hasTables && artifacts.tables.map((table: TableArtifact) => {
-                          const isNumberColumn = (col: string, idx: number) => {
-                            // First column is a number column if it's "#", "No", "Rank", etc.
-                            return idx === 0 && ['#', 'no', 'number', 'rank', 'row_number'].includes(col.toLowerCase());
-                          };
-                          
-                          const shouldHighlightNumber = table.render_hints?.highlight_numbers ?? false;
-                          
-                          return (
-                            <div key={table.id} className="rounded-lg border border-border/30 bg-muted/20 p-3 text-sm">
-                              <div className="mb-2 flex items-center justify-between">
-                                <div className="font-medium text-muted-foreground">{table.title || "Table"}</div>
-                                {table.render_hints?.is_aggregation && (
-                                  <Badge variant="outline" className="text-xs">
-                                    Aggregated Data
-                                  </Badge>
-                                )}
-                              </div>
-                              <div className="overflow-x-auto">
-                                <table className="w-full border-collapse text-xs">
-                                  <thead>
-                                    <tr className="border-b border-border/40">
-                                      {table.columns.map((col: string, colIdx: number) => (
-                                        <th 
-                                          key={colIdx} 
-                                          className={`px-2 py-1.5 text-left font-medium ${
-                                            isNumberColumn(col, colIdx) 
-                                              ? 'w-12 text-center text-primary' 
-                                              : ''
-                                          }`}
-                                        >
-                                          {col}
-                                        </th>
-                                      ))}
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {table.rows.map((row: any[], rowIdx: number) => (
-                                      <tr key={rowIdx} className="border-b border-border/20 last:border-0 hover:bg-muted/30 transition-colors">
-                                        {row.map((cell: any, cellIdx: number) => (
-                                          <td 
-                                            key={cellIdx} 
-                                            className={`px-2 py-1.5 ${
-                                              isNumberColumn(table.columns[cellIdx], cellIdx)
-                                                ? 'text-center font-semibold text-primary'
-                                                : shouldHighlightNumber && typeof cell === 'number'
-                                                ? 'font-mono font-medium'
-                                                : ''
-                                            }`}
-                                          >
-                                            {String(cell)}
-                                          </td>
-                                        ))}
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
-                              {table.render_hints?.show_totals && table.rows.length > 0 && (
-                                <div className="mt-2 text-xs text-muted-foreground">
-                                  Total rows: {table.rows.length}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                        {hasCharts && artifacts.charts.map((chart: ChartArtifact) => (
-                          chart.figure && (
+                        {artifacts.charts.map((chart: ChartArtifact) =>
+                          chart.figure ? (
                             <div key={chart.id} className="rounded-lg border border-border/30 bg-muted/20 p-3">
-                              <div className="mb-2 text-sm font-medium text-muted-foreground">{chart.title || "Chart"}</div>
+                              <div className="mb-2 text-sm font-medium text-muted-foreground">
+                                {chart.title || "Chart"}
+                              </div>
                               <Plot
                                 data={chart.figure.data as any}
                                 layout={{
@@ -471,99 +506,99 @@ export function ChatInterface() {
                                 useResizeHandler
                               />
                             </div>
-                          )
-                        ))}
+                          ) : null
+                        )}
                       </div>
                     </CollapsibleSection>
-                  );
-                })()}
-                
-                {/* Display citations for this specific message */}
-                {/* Note: Citations are now intelligently filtered by the backend.
-                    They only appear for research queries, not database queries. */}
-                {(() => {
-                  if (message.role !== "assistant" || !message.citations) return null;
-                  
-                  const citations = message.citations as any;
-                  if (!Array.isArray(citations) || citations.length === 0) return null;
-                  
-                  // Additional validation: Ensure citations have actual content
-                  // Filter out empty or invalid citation objects
-                  const validCitations = citations.filter((c: Citation) => 
-                    c && 
-                    (c.title || c.source || c.url) && 
-                    c.source !== undefined
-                  );
-                  
-                  if (validCitations.length === 0) return null;
-                  
-                  return (
-                    <CollapsibleSection 
-                      title={`Citations (${validCitations.length})`} 
-                      defaultOpen={true}
-                    >
-                      <div className="space-y-2">
-                        {validCitations.map((citation: Citation, idx: number) => {
-                          // Handle url which can be string or array of url objects
-                          let urlToDisplay = '';
-                          let urlHref = '';
-                          
-                          if (citation.url) {
-                            if (typeof citation.url === 'string') {
-                              // Simple string URL (arXiv, PubMed)
-                              urlToDisplay = citation.url;
-                              urlHref = citation.url;
-                            } else if (Array.isArray(citation.url)) {
-                              // Array of URL objects (Nature) - prefer first PDF, then HTML, then any
-                              const pdfUrl = citation.url.find((u: any) => u.format === 'pdf');
-                              const htmlUrl = citation.url.find((u: any) => u.format === 'html');
-                              const anyUrl = citation.url.find((u: any) => u.value);
-                              
-                              const selectedUrl = pdfUrl || htmlUrl || anyUrl;
-                              if (selectedUrl) {
-                                urlToDisplay = selectedUrl.format 
-                                  ? `View ${selectedUrl.format.toUpperCase()}` 
-                                  : 'View Article';
-                                urlHref = selectedUrl.value;
+                  )}
+
+                  {/* Display citations for this specific message */}
+                  {/* Note: Citations are now intelligently filtered by the backend.
+                      They only appear for research queries, not database queries. */}
+                  {(() => {
+                    if (message.role !== "assistant" || !message.citations) return null;
+                    
+                    const citations = message.citations as any;
+                    if (!Array.isArray(citations) || citations.length === 0) return null;
+                    
+                    // Additional validation: Ensure citations have actual content
+                    // Filter out empty or invalid citation objects
+                    const validCitations = citations.filter((c: Citation) => 
+                      c && 
+                      (c.title || c.source || c.url) && 
+                      c.source !== undefined
+                    );
+                    
+                    if (validCitations.length === 0) return null;
+                    
+                    return (
+                      <CollapsibleSection 
+                        title={`Citations (${validCitations.length})`} 
+                        defaultOpen={true}
+                      >
+                        <div className="space-y-2">
+                          {validCitations.map((citation: Citation, idx: number) => {
+                            // Handle url which can be string or array of url objects
+                            let urlToDisplay = '';
+                            let urlHref = '';
+                            
+                            if (citation.url) {
+                              if (typeof citation.url === 'string') {
+                                // Simple string URL (arXiv, PubMed)
+                                urlToDisplay = citation.url;
+                                urlHref = citation.url;
+                              } else if (Array.isArray(citation.url)) {
+                                // Array of URL objects (Nature) - prefer first PDF, then HTML, then any
+                                const pdfUrl = citation.url.find((u: any) => u.format === 'pdf');
+                                const htmlUrl = citation.url.find((u: any) => u.format === 'html');
+                                const anyUrl = citation.url.find((u: any) => u.value);
+                                
+                                const selectedUrl = pdfUrl || htmlUrl || anyUrl;
+                                if (selectedUrl) {
+                                  urlToDisplay = selectedUrl.format 
+                                    ? `View ${selectedUrl.format.toUpperCase()}` 
+                                    : 'View Article';
+                                  urlHref = selectedUrl.value;
+                                }
                               }
                             }
-                          }
-                          
-                          // Use a combination of index and citation properties for unique key
-                          const citationKey = citation.id || citation.title || `citation-${idx}`;
-                          
-                          return (
-                            <div key={citationKey} className="rounded-lg border border-border/30 bg-muted/20 p-3 text-xs">
-                              <div className="mb-1 font-medium">{String(citation.title || 'Untitled')}</div>
-                              <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
-                                {citation.authors && <span>{String(citation.authors)}</span>}
-                                {citation.authors && citation.source && <span>•</span>}
-                                {citation.source && (
-                                  <span>
-                                    {String(citation.source)}
-                                    {citation.published && ` • ${String(citation.published).split('T')[0]}`}
-                                  </span>
+                            
+                            // Use a combination of index and citation properties for unique key
+                            const citationKey = citation.id || citation.title || `citation-${idx}`;
+                            
+                            return (
+                              <div key={citationKey} className="rounded-lg border border-border/30 bg-muted/20 p-3 text-xs">
+                                <div className="mb-1 font-medium">{String(citation.title || 'Untitled')}</div>
+                                <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
+                                  {citation.authors && <span>{String(citation.authors)}</span>}
+                                  {citation.authors && citation.source && <span>•</span>}
+                                  {citation.source && (
+                                    <span>
+                                      {String(citation.source)}
+                                      {citation.published && ` • ${String(citation.published).split('T')[0]}`}
+                                    </span>
+                                  )}
+                                </div>
+                                {urlHref && (
+                                  <a
+                                    href={urlHref}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-primary hover:underline"
+                                  >
+                                    {urlToDisplay}
+                                  </a>
                                 )}
                               </div>
-                              {urlHref && (
-                                <a
-                                  href={urlHref}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-primary hover:underline"
-                                >
-                                  {urlToDisplay}
-                                </a>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </CollapsibleSection>
-                  );
-                })()}
+                            );
+                          })}
+                        </div>
+                      </CollapsibleSection>
+                    );
+                  })()}
               </div>
-            ))}
+            );
+          })}
 
             {(streamingState || awaitingResponse) && (
               <Card className="border border-border/40 bg-background/40 p-3 text-sm">

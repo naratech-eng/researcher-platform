@@ -233,7 +233,7 @@ Available tables: animals, traits, and other genetics-related tables.
 """
         
         # Create SQL agent with enhanced instructions
-        agent = create_sql_agent(
+        agent_executor = create_sql_agent(
             llm=llm,
             db=db,
             agent_type="openai-tools",
@@ -243,8 +243,11 @@ Available tables: animals, traits, and other genetics-related tables.
             prefix=system_prefix,
         )
         
+        # Configure agent executor to return intermediate steps
+        agent_executor.return_intermediate_steps = True
+        
         # Execute the query
-        result = agent.invoke({"input": user_question})
+        result = agent_executor.invoke({"input": user_question})
         
         # Parse the result to extract structured data
         structured_data = _extract_structured_data_from_agent_result(result, db)
@@ -291,8 +294,10 @@ def _extract_structured_data_from_agent_result(
                 action = step[0]
                 observation = step[1]
                 
-                # Check if this was a query execution
-                if hasattr(action, "tool") and "sql_db_query" in str(action.tool).lower():
+                tool_name = str(action.tool) if hasattr(action, "tool") else "unknown"
+                
+                # Look specifically for sql_db_query tool (the actual query executor)
+                if tool_name == "sql_db_query":
                     # Extract the SQL query
                     if hasattr(action, "tool_input"):
                         query_input = action.tool_input

@@ -38,6 +38,7 @@ class ChatArtifacts(BaseModel):
     charts: List[dict] = []
     files: List[dict] = []
     code_snippets: List[dict] = []  # Copyable code blocks with language and content
+    table_explanation: str = ""  # Detailed explanation to show after tables
 
 
 class ChatResponse(BaseModel):
@@ -197,11 +198,14 @@ async def chat_endpoint(payload: ChatRequest) -> ChatResponse:
     
     # Step 6: Apply LLM summarization if enabled
     if settings.has_langchain_summarizer and artifacts.tables:
-        answer = summarize_with_tables(
+        summary_result = summarize_with_tables(
             user_question=last_user.content,
             tables=artifacts.tables,
             fallback_answer=answer,
         )
+        # Extract intro for the answer and explanation for after the table
+        answer = summary_result.get("intro", answer)
+        artifacts.table_explanation = summary_result.get("explanation", "")
     elif settings.has_llm and not query_intent.is_research_query:
         # Only use basic LLM refinement for non-research queries
         answer = generate_llm_answer(payload.messages, answer)

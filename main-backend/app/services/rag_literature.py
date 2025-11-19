@@ -303,6 +303,12 @@ class LiteratureRetriever:
         
         # Default to general genetics query
         if not search_terms:
+            # Use the full user question as the primary search term so that
+            # retrieval is driven directly by the user's intent.
+            cleaned_question = user_question.strip()
+            if cleaned_question:
+                search_terms.append(cleaned_question)
+            # Also keep a generic quantitative genetics term as a secondary fallback.
             search_terms.append("quantitative genetics genomics")
         
         # Search across multiple sources
