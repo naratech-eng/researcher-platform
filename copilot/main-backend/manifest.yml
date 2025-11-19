@@ -45,6 +45,7 @@ variables:
   MAIN_BACKEND_USE_LLM_IN_CHAT: true
   MAIN_BACKEND_USE_LANGCHAIN_SUMMARIZER: false  # Set to true when ready for prod
   MAIN_BACKEND_USE_CHARTS: false  # Set to true when ready for prod
+  MAIN_BACKEND_CORS_ORIGINS: "http://localhost:5173,https://app.naratech.ca,https://dev-app.naratech.ca"
   OPENAI_MODEL: gpt-4o-mini
 
 

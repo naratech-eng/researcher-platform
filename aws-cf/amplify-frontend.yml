@@ -37,7 +37,7 @@ Parameters:
     Default: naratech.ca
   ProdSubdomainPrefix:
     Type: String
-    Default: platform
+    Default: app
   DevSubdomainPrefix:
     Type: String
     Default: dev
