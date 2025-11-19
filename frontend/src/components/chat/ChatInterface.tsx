@@ -460,10 +460,15 @@ export function ChatInterface() {
                                 layout={{
                                   ...(chart.figure.layout as any),
                                   autosize: true,
-                                  margin: { l: 40, r: 20, t: 30, b: 40 },
+                                  margin: { l: 40, r: 20, t: 40, b: 50 },
                                 }}
-                                config={{ responsive: true, displayModeBar: false }}
-                                className="w-full"
+                                config={{
+                                  responsive: true,
+                                  displayModeBar: true,
+                                  displaylogo: false,
+                                }}
+                                style={{ width: "100%", height: "400px" }}
+                                useResizeHandler
                               />
                             </div>
                           )
