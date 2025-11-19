@@ -20,7 +20,7 @@ def summarize_with_tables(
     user_question: str,
     tables: List[Dict[str, Any]],
     fallback_answer: str,
-) -> str:
+) -> Dict[str, str]:
     """Generate a data-aware answer using LangChain and table artifacts.
 
     Args:
@@ -29,12 +29,12 @@ def summarize_with_tables(
         fallback_answer: Text to return if LLM call fails
 
     Returns:
-        A data-aware explanation that references the actual table content
+        Dict with 'intro' (brief text before table) and 'explanation' (detailed text after table)
     """
     settings = get_settings()
 
     if not settings.has_langchain_summarizer or not tables:
-        return fallback_answer
+        return {"intro": fallback_answer, "explanation": ""}
 
     try:
         # Build a compact representation of the tables for the prompt
@@ -59,24 +59,24 @@ def summarize_with_tables(
             table_summaries.append(table_summary)
 
         # Format the table data as JSON for the prompt
-        tables_json = json.dumps(table_summaries, indent=2)
+        tables_json = json.dumps(table_summaries, indent=2, default=str)
 
-        # Create a LangChain prompt template
+        # Create a LangChain prompt template for detailed explanation
         prompt = ChatPromptTemplate.from_messages(
             [
                 (
                     "system",
                     "You are a genetics research assistant. The user has asked a question "
-                    "and received data from the genetics database. Your job is to explain "
-                    "what the data shows in a clear, concise way that directly answers their "
-                    "question. Reference specific values, patterns, or insights from the data."
+                    "and received data from the genetics database. Provide a detailed explanation "
+                    "of what the data shows, referencing specific values, patterns, and insights. "
+                    "This explanation will appear AFTER the table, so focus on interpreting the data."
                 ),
                 (
                     "user",
                     "Question: {question}\n\n"
                     "Data returned from the database:\n{tables}\n\n"
-                    "Please provide a clear explanation of what this data shows, "
-                    "referencing specific values and patterns where relevant."
+                    "Please provide a detailed explanation of what this data shows, "
+                    "including patterns, trends, and key insights from the actual values."
                 ),
             ]
         )
@@ -93,9 +93,13 @@ def summarize_with_tables(
         result = chain.invoke({"question": user_question, "tables": tables_json})
 
         # Extract the content from the LangChain response
-        content = result.content if hasattr(result, "content") else str(result)
-        return content or fallback_answer
+        explanation = result.content if hasattr(result, "content") else str(result)
+        
+        # Generate a brief intro
+        intro = "Here are the records from the genetics database."
+        
+        return {"intro": intro, "explanation": explanation or ""}
 
     except Exception:
         # Fallback gracefully to avoid breaking /chat
-        return fallback_answer
+        return {"intro": fallback_answer, "explanation": ""}
