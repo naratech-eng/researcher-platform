@@ -238,8 +238,8 @@ Available tables: animals, traits, and other genetics-related tables.
             db=db,
             agent_type="openai-tools",
             verbose=False,
-            max_iterations=5,
-            max_execution_time=15,
+            max_iterations=10,
+            max_execution_time=30,
             prefix=system_prefix,
         )
         
@@ -330,12 +330,17 @@ def _extract_structured_data_from_agent_result(
         # Fallback: try to parse the output text
         output = result.get("output", "")
         if output and isinstance(output, str):
+            # If the agent stopped because it hit its iteration limit, treat
+            # this as an error rather than pretending it is real query data.
+            if "agent stopped due to max iterations" in output.lower():
+                return None
+
             return {
                 "columns": ["result"],
                 "rows": [[output]],
                 "sql_query": None,
             }
-        
+
         return None
         
     except Exception as e:

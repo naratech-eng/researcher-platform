@@ -142,11 +142,26 @@ async def chat_endpoint(payload: ChatRequest) -> ChatResponse:
             artifacts.tables.append(table)
             
             # Try to generate chart if query seems visualization-friendly
-            wants_chart = any(
-                kw in last_user.content.lower()
-                for kw in ["chart", "graph", "plot", "visualize", "distribution"]
-            )
-            
+            question_lower = last_user.content.lower()
+            chart_keywords = [
+                "chart",
+                "graph",
+                "plot",
+                "visualize",
+                "visualise",
+                "visualization",
+                "visualisation",
+                "viz",
+                "figure",
+                "diagram",
+                "distribution",
+                "histogram",
+                "bar chart",
+                "line chart",
+                "scatter plot",
+            ]
+            wants_chart = any(kw in question_lower for kw in chart_keywords)
+
             if wants_chart and settings.has_charts:
                 chart = generate_chart_from_genetics_query(last_user.content, structured_result)
                 if chart:
