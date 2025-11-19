@@ -236,6 +236,10 @@ export function ChatInterface() {
     setInput("");
     setAttachedFiles([]);
     setAwaitingResponse(true);
+    
+    // Clear pending artifacts and citations from previous query
+    setPendingArtifacts(null);
+    setPendingCitations([]);
 
     const conversationPayload: ChatMessagePayload[] = [...messages, userMessage].map((message) => ({
       role: message.role,
@@ -248,7 +252,9 @@ export function ChatInterface() {
     sendChatMessage(conversationPayload)
       .then((response) => {
         setPendingArtifacts(response.artifacts);
-        setPendingCitations(response.citations ?? []);
+        // Ensure citations is always an array, never undefined or null
+        const citations = Array.isArray(response.citations) ? response.citations : [];
+        setPendingCitations(citations);
         setAwaitingResponse(false);
         setStreamingState({
           id: pendingId,
@@ -261,6 +267,9 @@ export function ChatInterface() {
         toast.error(error.message || "Failed to contact backend");
         setStreamingState(null);
         setAwaitingResponse(false);
+        // Clear pending state on error
+        setPendingArtifacts(null);
+        setPendingCitations([]);
       });
   };
 
@@ -376,35 +385,72 @@ export function ChatInterface() {
                   return (
                     <CollapsibleSection title="Query Results" defaultOpen={false}>
                       <div className="space-y-3">
-                        {hasTables && artifacts.tables.map((table: TableArtifact) => (
-                          <div key={table.id} className="rounded-lg border border-border/30 bg-muted/20 p-3 text-sm">
-                            <div className="mb-2 font-medium text-muted-foreground">{table.title || "Table"}</div>
-                            <div className="overflow-x-auto">
-                              <table className="w-full border-collapse text-xs">
-                                <thead>
-                                  <tr className="border-b border-border/40">
-                                    {table.columns.map((col: string, colIdx: number) => (
-                                      <th key={colIdx} className="px-2 py-1.5 text-left font-medium">
-                                        {col}
-                                      </th>
-                                    ))}
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {table.rows.map((row: any[], rowIdx: number) => (
-                                    <tr key={rowIdx} className="border-b border-border/20 last:border-0">
-                                      {row.map((cell: any, cellIdx: number) => (
-                                        <td key={cellIdx} className="px-2 py-1.5">
-                                          {String(cell)}
-                                        </td>
+                        {hasTables && artifacts.tables.map((table: TableArtifact) => {
+                          const isNumberColumn = (col: string, idx: number) => {
+                            // First column is a number column if it's "#", "No", "Rank", etc.
+                            return idx === 0 && ['#', 'no', 'number', 'rank', 'row_number'].includes(col.toLowerCase());
+                          };
+                          
+                          const shouldHighlightNumber = table.render_hints?.highlight_numbers ?? false;
+                          
+                          return (
+                            <div key={table.id} className="rounded-lg border border-border/30 bg-muted/20 p-3 text-sm">
+                              <div className="mb-2 flex items-center justify-between">
+                                <div className="font-medium text-muted-foreground">{table.title || "Table"}</div>
+                                {table.render_hints?.is_aggregation && (
+                                  <Badge variant="outline" className="text-xs">
+                                    Aggregated Data
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="overflow-x-auto">
+                                <table className="w-full border-collapse text-xs">
+                                  <thead>
+                                    <tr className="border-b border-border/40">
+                                      {table.columns.map((col: string, colIdx: number) => (
+                                        <th 
+                                          key={colIdx} 
+                                          className={`px-2 py-1.5 text-left font-medium ${
+                                            isNumberColumn(col, colIdx) 
+                                              ? 'w-12 text-center text-primary' 
+                                              : ''
+                                          }`}
+                                        >
+                                          {col}
+                                        </th>
                                       ))}
                                     </tr>
-                                  ))}
-                                </tbody>
-                              </table>
+                                  </thead>
+                                  <tbody>
+                                    {table.rows.map((row: any[], rowIdx: number) => (
+                                      <tr key={rowIdx} className="border-b border-border/20 last:border-0 hover:bg-muted/30 transition-colors">
+                                        {row.map((cell: any, cellIdx: number) => (
+                                          <td 
+                                            key={cellIdx} 
+                                            className={`px-2 py-1.5 ${
+                                              isNumberColumn(table.columns[cellIdx], cellIdx)
+                                                ? 'text-center font-semibold text-primary'
+                                                : shouldHighlightNumber && typeof cell === 'number'
+                                                ? 'font-mono font-medium'
+                                                : ''
+                                            }`}
+                                          >
+                                            {String(cell)}
+                                          </td>
+                                        ))}
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                              {table.render_hints?.show_totals && table.rows.length > 0 && (
+                                <div className="mt-2 text-xs text-muted-foreground">
+                                  Total rows: {table.rows.length}
+                                </div>
+                              )}
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                         {hasCharts && artifacts.charts.map((chart: ChartArtifact) => (
                           chart.figure && (
                             <div key={chart.id} className="rounded-lg border border-border/30 bg-muted/20 p-3">
@@ -428,16 +474,31 @@ export function ChatInterface() {
                 })()}
                 
                 {/* Display citations for this specific message */}
+                {/* Note: Citations are now intelligently filtered by the backend.
+                    They only appear for research queries, not database queries. */}
                 {(() => {
                   if (message.role !== "assistant" || !message.citations) return null;
                   
                   const citations = message.citations as any;
                   if (!Array.isArray(citations) || citations.length === 0) return null;
                   
+                  // Additional validation: Ensure citations have actual content
+                  // Filter out empty or invalid citation objects
+                  const validCitations = citations.filter((c: Citation) => 
+                    c && 
+                    (c.title || c.source || c.url) && 
+                    c.source !== undefined
+                  );
+                  
+                  if (validCitations.length === 0) return null;
+                  
                   return (
-                    <CollapsibleSection title="Citations" defaultOpen={true}>
+                    <CollapsibleSection 
+                      title={`Citations (${validCitations.length})`} 
+                      defaultOpen={true}
+                    >
                       <div className="space-y-2">
-                        {citations.map((citation: Citation, idx: number) => {
+                        {validCitations.map((citation: Citation, idx: number) => {
                           // Handle url which can be string or array of url objects
                           let urlToDisplay = '';
                           let urlHref = '';
@@ -463,8 +524,11 @@ export function ChatInterface() {
                             }
                           }
                           
+                          // Use a combination of index and citation properties for unique key
+                          const citationKey = citation.id || citation.title || `citation-${idx}`;
+                          
                           return (
-                            <div key={idx} className="rounded-lg border border-border/30 bg-muted/20 p-3 text-xs">
+                            <div key={citationKey} className="rounded-lg border border-border/30 bg-muted/20 p-3 text-xs">
                               <div className="mb-1 font-medium">{String(citation.title || 'Untitled')}</div>
                               <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
                                 {citation.authors && <span>{String(citation.authors)}</span>}

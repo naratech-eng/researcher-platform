@@ -45,6 +45,11 @@ export interface TableArtifact {
   title?: string;
   columns: string[];
   rows: unknown[][];
+  render_hints?: {
+    is_aggregation?: boolean;
+    show_totals?: boolean;
+    highlight_numbers?: boolean;
+  };
 }
 
 export interface ChartArtifact {
