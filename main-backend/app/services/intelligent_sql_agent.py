@@ -238,8 +238,8 @@ Available tables: animals, traits, and other genetics-related tables.
             db=db,
             agent_type="openai-tools",
             verbose=False,
-            max_iterations=10,
-            max_execution_time=30,
+            max_iterations=20,
+            max_execution_time=60,
             prefix=system_prefix,
         )
         
@@ -340,7 +340,7 @@ def _extract_structured_data_from_agent_result(
                 "rows": [[output]],
                 "sql_query": None,
             }
-
+        
         return None
         
     except Exception as e:
