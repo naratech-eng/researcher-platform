@@ -68,7 +68,8 @@ Analyze the user's question and determine:
 2. requires_table: true if results should be shown as a table
 3. requires_ordering: true if results should be ordered/ranked
 4. is_database_query: true if asking about data in the database (animals, traits, farmers, etc.)
-5. is_research_query: true if asking about research, papers, literature, studies, or scientific findings
+5. is_research_query: true if asking about research, papers, literature, studies, scientific findings,
+   or statistical / genetic methods (e.g., heritability, genetic correlation, GWAS power, linear mixed models).
 
 Respond ONLY with a JSON object in this exact format:
 {{
@@ -117,10 +118,36 @@ def _fallback_intent_analysis(user_question: str) -> QueryIntent:
         for kw in ["database", "animal", "trait", "breed", "farmer", "query", "sql", "show", "list", "count"]
     )
     
-    # Check for research query keywords
+    # Check for research / literature / statistical-method query keywords
     is_research_query = any(
         kw in question_lower
-        for kw in ["research", "paper", "study", "literature", "citation", "publication", "journal", "findings"]
+        for kw in [
+            "research",
+            "paper",
+            "papers",
+            "study",
+            "studies",
+            "literature",
+            "citation",
+            "citations",
+            "publication",
+            "journal",
+            "findings",
+            # Statistical / genetic method terms that should use RAG literature
+            "heritability",
+            "genetic correlation",
+            "gwas",
+            "genome-wide association",
+            "linear mixed model",
+            "mixed model",
+            "lmm",
+            "logistic regression",
+            "association model",
+            "statistical power",
+            "multiple testing",
+            "bonferroni",
+            "fdr",
+        ]
     )
     
     # Determine query type

@@ -10,6 +10,7 @@ from app.services.intelligent_sql_agent import (
     execute_intelligent_sql_query,
 )
 from app.services.langchain_summarizer import summarize_with_tables
+from app.services.literature_summarizer import summarize_literature_answer
 from app.services.llm_client import generate_llm_answer
 from app.services.rag_literature import retrieve_literature_for_question
 from app.services.response_formatter import (
@@ -79,29 +80,38 @@ async def chat_endpoint(payload: ChatRequest) -> ChatResponse:
     
     answer = ""
     
-    # Step 2: Handle research queries
+    # Step 2: Handle research queries (literature-grounded answers)
     if query_intent.is_research_query and settings.has_rag:
         literature_result = retrieve_literature_for_question(last_user.content)
         if literature_result:
             raw_citations = literature_result.get("citations", [])
+            papers = literature_result.get("papers", [])
             num_citations = len(raw_citations)
-            
-            if num_citations > 0:
+
+            if num_citations > 0 and papers:
+                # Build a simple fallback summary in case the LLM call fails
                 highlight_titles = [c.get("title", "") for c in raw_citations[:3]]
                 highlight_titles = [title for title in highlight_titles if title]
                 highlight_summary = "; ".join(highlight_titles)
                 source_note = "These include papers from arXiv, PubMed, and Nature where available."
-                
+
                 if highlight_summary:
-                    answer = (
+                    fallback_answer = (
                         f"I found {num_citations} recent papers relevant to your question. "
                         f"Highlights include: {highlight_summary}. {source_note}"
                     )
                 else:
-                    answer = (
+                    fallback_answer = (
                         f"I gathered {num_citations} recent papers relevant to your question. "
                         f"{source_note}"
                     )
+
+                # Use literature-aware summarizer to generate a grounded answer
+                answer = summarize_literature_answer(
+                    user_question=last_user.content,
+                    papers=papers,
+                    fallback_answer=fallback_answer,
+                )
             else:
                 answer = (
                     "I searched the literature sources but couldn't find relevant papers for this question. "
