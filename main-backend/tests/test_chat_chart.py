@@ -107,3 +107,46 @@ def test_chat_no_chart_without_flag() -> None:
     # Should not have chart artifacts when flag is disabled
     charts = data["artifacts"]["charts"]
     assert len(charts) == 0
+
+
+@pytest.mark.skipif(
+    not settings.has_postgres or not settings.has_charts,
+    reason="PostgreSQL or charts not configured for main-backend",
+)
+def test_chat_milk_weight_chart_for_animal() -> None:
+    """Regression test: chart for milk weight time series of a specific animal.
+
+    This mirrors the browser scenario for animal 4CHI79312ZC and ensures that
+    when the user explicitly asks for a chart, the /chat endpoint returns a
+    Plotly chart artifact in addition to any tables.
+    """
+    payload = {
+        "messages": [
+            {
+                "role": "user",
+                "content": "Show me a chart of test-day milk weight over time for animal 4CHI79312ZC from the database",
+            }
+        ]
+    }
+
+    response = client.post("/chat", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+
+    # Should have table data
+    tables = data["artifacts"]["tables"]
+    assert isinstance(tables, list)
+    assert len(tables) >= 1
+
+    # Should have at least one chart when chart feature is enabled
+    charts = data["artifacts"]["charts"]
+    assert isinstance(charts, list)
+    assert len(charts) >= 1
+
+    # Verify first chart has Plotly figure structure
+    chart = charts[0]
+    assert "figure" in chart
+    figure = chart["figure"]
+    assert isinstance(figure, dict)
+    assert "data" in figure
+    assert "layout" in figure

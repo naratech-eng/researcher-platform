@@ -23,7 +23,24 @@ mermaid.initialize({
   securityLevel: "loose",
 });
 
+// Normalize common LaTeX delimiters so remark-math/rehype-katex can render them
+function normalizeMathDelimiters(text: string): string {
+  if (!text) return text;
+
+  let normalized = text;
+
+  // Convert display math \[ ... \] to $$ ... $$
+  normalized = normalized.replace(/\\\[([\s\S]+?)\\\]/g, (_match, expr) => `\n$$${expr}$$\n`);
+
+  // Convert inline math \( ... \) to $ ... $
+  normalized = normalized.replace(/\\\((.+?)\\\)/g, (_match, expr) => `$${expr}$`);
+
+  return normalized;
+}
+
 export function MarkdownRenderer({ content }: MarkdownRendererProps) {
+  const normalizedContent = normalizeMathDelimiters(content);
+
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm, remarkMath]}
@@ -47,7 +64,7 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
         a: AComponent,
       }}
     >
-      {content}
+      {normalizedContent}
     </ReactMarkdown>
   );
 }
