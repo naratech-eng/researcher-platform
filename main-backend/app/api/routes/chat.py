@@ -1,6 +1,8 @@
+import asyncio
+import uuid
 from typing import List, Literal, Optional
 
-from fastapi import APIRouter
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 from pydantic import BaseModel
 
 from app.core.config import get_settings
@@ -19,6 +21,7 @@ from app.services.response_formatter import (
     generate_smart_answer,
     should_include_citations,
 )
+from app.services.job_store import job_store
 
 
 router = APIRouter()
@@ -47,16 +50,15 @@ class ChatResponse(BaseModel):
     citations: Optional[List[dict]] = None
 
 
-@router.post("/chat", response_model=ChatResponse, tags=["chat"])
-async def chat_endpoint(payload: ChatRequest) -> ChatResponse:
-    """Enhanced /chat endpoint with intelligent query understanding.
+class JobStatusResponse(BaseModel):
+    job_id: str
+    status: Literal["pending", "succeeded", "failed"]
+    result: Optional[ChatResponse] = None
+    error: Optional[str] = None
 
-    Improvements:
-    - Uses LangChain SQL agent to intelligently understand queries
-    - Dynamically determines when to show tables with proper ordering
-    - Only shows citations for research queries, not database queries
-    - Properly formats numbered/ordered results
-    """
+
+async def process_chat(payload: ChatRequest) -> ChatResponse:
+    """Shared chat processing so we can reuse for sync and async endpoints."""
 
     # Find the last user message if present
     last_user: Optional[ChatMessage] = None
@@ -131,6 +133,12 @@ async def chat_endpoint(payload: ChatRequest) -> ChatResponse:
             last_user.content,
             intent=query_intent,
         )
+
+        # If the agent timed out or failed, surface a friendly message instead of 503
+        if structured_result and "error_message" in structured_result:
+            if not answer:
+                answer = structured_result["error_message"]
+            structured_result = None
         
         if structured_result:
             # Create table artifact
@@ -222,4 +230,56 @@ async def chat_endpoint(payload: ChatRequest) -> ChatResponse:
         answer=answer,
         artifacts=artifacts,
         citations=final_citations,
+    )
+
+
+@router.post("/chat", response_model=ChatResponse, tags=["chat"])
+async def chat_endpoint(payload: ChatRequest) -> ChatResponse:
+    """Standard synchronous /chat call (still subject to API Gateway timeout)."""
+    return await process_chat(payload)
+
+
+def _enqueue_chat_job(job_id: str, payload_dict: dict) -> None:
+    """Run chat processing in a fresh event loop (BackgroundTasks runs in a thread)."""
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        job_store.set_job_running(job_id)
+        payload = ChatRequest(**payload_dict)
+        result = loop.run_until_complete(process_chat(payload))
+        job_store.set_job_result(job_id, result)
+    except Exception as exc:
+        job_store.set_job_error(job_id, str(exc))
+    finally:
+        try:
+            loop.close()
+        except Exception:
+            pass
+
+
+@router.post("/chat/async", response_model=JobStatusResponse, tags=["chat"])
+async def chat_async(
+    payload: ChatRequest,
+    background_tasks: BackgroundTasks,
+) -> JobStatusResponse:
+    """Submit a chat job to run asynchronously for long/complex queries."""
+    job_id = str(uuid.uuid4())
+    job_store.create_job(job_id)
+    # Schedule execution; BackgroundTasks runs after the response is sent
+    background_tasks.add_task(_enqueue_chat_job, job_id, payload.dict())
+    return JobStatusResponse(job_id=job_id, status="pending")
+
+
+@router.get("/chat/async/{job_id}", response_model=JobStatusResponse, tags=["chat"])
+async def chat_async_status(job_id: str) -> JobStatusResponse:
+    """Check the status/result of an async chat job."""
+    job = job_store.get_job(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="job not found")
+
+    return JobStatusResponse(
+        job_id=job_id,
+        status=job["status"],
+        result=job.get("result"),
+        error=job.get("error"),
     )

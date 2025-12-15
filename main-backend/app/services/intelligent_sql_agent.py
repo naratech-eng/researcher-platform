@@ -9,6 +9,8 @@ This module provides an enhanced SQL agent that:
 
 from __future__ import annotations
 
+import time
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from typing import Any, Dict, List, Optional
 import json
 
@@ -209,7 +211,7 @@ def execute_intelligent_sql_query(
         db = SQLDatabase.from_uri(
             settings.postgres_dsn,
             include_tables=None,
-            sample_rows_in_table_info=3,
+            sample_rows_in_table_info=1,
         )
         
         # Create LLM for the agent
@@ -217,6 +219,7 @@ def execute_intelligent_sql_query(
             model=settings.openai_model,
             api_key=settings.openai_api_key,
             temperature=0,
+            timeout=15,
         )
         
         # Enhanced system prefix with ordering instructions
@@ -238,16 +241,23 @@ Available tables: animals, traits, and other genetics-related tables.
             db=db,
             agent_type="openai-tools",
             verbose=False,
-            max_iterations=20,
-            max_execution_time=60,
+            # Keep within API Gateway’s ~29s timeout budget
+            max_iterations=6,
+            max_execution_time=18,
             prefix=system_prefix,
         )
         
         # Configure agent executor to return intermediate steps
         agent_executor.return_intermediate_steps = True
         
-        # Execute the query
-        result = agent_executor.invoke({"input": user_question})
+        # Execute the query with a hard timeout to stay under API Gateway limits
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(agent_executor.invoke, {"input": user_question})
+            try:
+                result = future.result(timeout=18)
+            except FuturesTimeoutError:
+                future.cancel()
+                raise TimeoutError("SQL agent timed out")
         
         # Parse the result to extract structured data
         structured_data = _extract_structured_data_from_agent_result(result, db)
@@ -264,8 +274,14 @@ Available tables: animals, traits, and other genetics-related tables.
         return None
         
     except Exception as e:
+        # Friendly fallback so API Gateway returns 200 with a helpful message instead of timing out
         print(f"Intelligent SQL query error: {e}")
-        return None
+        return {
+            "error_message": (
+                "The database query took too long or failed. "
+                "Please try a simpler question or rephrase."
+            )
+        }
 
 
 def _extract_structured_data_from_agent_result(
