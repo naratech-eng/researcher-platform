@@ -1,0 +1,53 @@
+name: main-backend-internal
+type: Backend Service
+platform: linux/arm64
+
+image:
+  build:
+    dockerfile: main-backend/Dockerfile
+    context: main-backend
+  port: 8000
+
+cpu: 256
+memory: 512
+count: 1
+
+network:
+  connect: true
+  vpc:
+    placement: 'public'
+
+variables:
+  MAIN_BACKEND_ENV: prod
+  MAIN_BACKEND_DB_HOST: genetic-pg.ct2eug022ja6.us-east-2.rds.amazonaws.com
+  MAIN_BACKEND_DB_PORT: 5432
+  MAIN_BACKEND_DB_NAME: genetic_db
+  MAIN_BACKEND_DB_USER: genetic_admin
+  MAIN_BACKEND_USE_LLM_IN_CHAT: true
+  MAIN_BACKEND_USE_LANGCHAIN_SUMMARIZER: true
+  MAIN_BACKEND_USE_CHARTS: true
+  MAIN_BACKEND_CORS_ORIGINS: "http://localhost:5173,https://app.naratech.ca,https://dev-app.naratech.ca"
+  OPENAI_MODEL: gpt-5.1
+
+secrets:
+  MAIN_BACKEND_DB_PASSWORD: /copilot/naratech/dev/secrets/MAIN_BACKEND_DB_PASSWORD
+  OPENAI_API_KEY: /copilot/naratech/dev/secrets/OPENAI_API_KEY
+  NATURE_API_KEY: /copilot/naratech/dev/secrets/NATURE_API_KEY
+  NCBI_API_KEY: /copilot/naratech/dev/secrets/NCBI_API_KEY
+  NCBI_EMAIL: /copilot/naratech/dev/secrets/NCBI_EMAIL
+
+environments:
+  dev:
+    variables:
+      MAIN_BACKEND_ENV: dev
+    count: 1
+  prod:
+    secrets:
+      MAIN_BACKEND_DB_PASSWORD: /copilot/naratech/prod/secrets/MAIN_BACKEND_DB_PASSWORD
+      OPENAI_API_KEY: /copilot/naratech/prod/secrets/OPENAI_API_KEY
+      NATURE_API_KEY: /copilot/naratech/prod/secrets/NATURE_API_KEY
+      NCBI_API_KEY: /copilot/naratech/prod/secrets/NCBI_API_KEY
+      NCBI_EMAIL: /copilot/naratech/prod/secrets/NCBI_EMAIL
+    count: 2
+    cpu: 512
+    memory: 1024
