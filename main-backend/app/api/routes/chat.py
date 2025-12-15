@@ -52,7 +52,7 @@ class ChatResponse(BaseModel):
 
 class JobStatusResponse(BaseModel):
     job_id: str
-    status: Literal["pending", "succeeded", "failed"]
+    status: Literal["pending", "running", "succeeded", "failed"]
     result: Optional[ChatResponse] = None
     error: Optional[str] = None
 
