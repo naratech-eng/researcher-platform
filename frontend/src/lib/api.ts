@@ -85,9 +85,27 @@ export interface ChatResponsePayload {
   citations?: Citation[];
 }
 
+export interface JobStatusResponse {
+  job_id: string;
+  status: "pending" | "running" | "succeeded" | "failed";
+  result?: ChatResponsePayload;
+  error?: string;
+}
+
 export async function sendChatMessage(messages: ChatMessagePayload[]): Promise<ChatResponsePayload> {
   return fastapiFetch<ChatResponsePayload>("/chat", {
     method: "POST",
     body: JSON.stringify({ messages }),
   });
+}
+
+export async function sendChatMessageAsync(messages: ChatMessagePayload[]): Promise<JobStatusResponse> {
+  return fastapiFetch<JobStatusResponse>("/chat/async", {
+    method: "POST",
+    body: JSON.stringify({ messages }),
+  });
+}
+
+export async function getChatJobStatus(jobId: string): Promise<JobStatusResponse> {
+  return fastapiFetch<JobStatusResponse>(`/chat/async/${jobId}`);
 }

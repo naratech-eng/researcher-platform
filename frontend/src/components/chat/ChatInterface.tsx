@@ -22,7 +22,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { MarkdownRenderer } from "./MarkdownRenderer";
 import { toast } from "sonner";
-import { checkFastApiHealth, sendChatMessage, type ChatMessagePayload, type TableArtifact, type ChartArtifact, type Citation, type ChatResponsePayload } from "@/lib/api";
+import {
+  checkFastApiHealth,
+  sendChatMessage,
+  sendChatMessageAsync,
+  getChatJobStatus,
+  type ChatMessagePayload,
+  type TableArtifact,
+  type ChartArtifact,
+  type Citation,
+  type ChatResponsePayload,
+} from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { useChatStore, type StoredMessage } from "@/store/chatStore";
 import { uploadMessageAttachments } from "@/lib/fileUpload";
@@ -45,6 +55,37 @@ const suggestions = [
     prompt: "Help me interpret breeding value estimations from my genomic data",
   },
 ];
+
+const dbKeywords = [
+  "database",
+  "db",
+  "table",
+  "sql",
+  "query",
+  "animals",
+  "animal",
+  "traits",
+  "trait",
+  "breed",
+  "breeds",
+  "farmer",
+  "farmers",
+  "id",
+  "ids",
+  "list",
+  "count",
+  "rows",
+  "columns",
+  "select",
+  "show",
+  "overview",
+  "schema",
+];
+
+const isLikelyDbQuery = (text: string) => {
+  const lower = text.toLowerCase();
+  return dbKeywords.some((kw) => lower.includes(kw));
+};
 
 interface StreamingState {
   id: string;
@@ -72,6 +113,8 @@ export function ChatInterface() {
   const [streamingState, setStreamingState] = useState<StreamingState | null>(null);
   const [backendHealthy, setBackendHealthy] = useState<boolean | null>(null);
   const [awaitingResponse, setAwaitingResponse] = useState(false);
+  const [pendingJobId, setPendingJobId] = useState<string | null>(null);
+  const [jobStatus, setJobStatus] = useState<"pending" | "running" | null>(null);
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -81,7 +124,7 @@ export function ChatInterface() {
   // Feature flags
   const [includeCitations, setIncludeCitations] = useState(true);
   const [generateCharts, setGenerateCharts] = useState(false);
-  const [deepSearch, setDeepSearch] = useState(false);
+  const [deepSearch, setDeepSearch] = useState(false); // reuse as “async/long query” trigger
 
   const canSend = input.trim().length > 0 || attachedFiles.length > 0;
   const MAX_FILES = 5;
@@ -144,6 +187,70 @@ export function ChatInterface() {
   useEffect(() => {
     checkFastApiHealth().then(setBackendHealthy).catch(() => setBackendHealthy(false));
   }, []);
+
+  // Poll async job status when pendingJobId is set
+  useEffect(() => {
+    if (!pendingJobId) return;
+    let cancelled = false;
+    let pollTimer: number | undefined;
+
+    const poll = async () => {
+      try {
+        const status = await getChatJobStatus(pendingJobId);
+        if (cancelled) return;
+
+        if (status.status === "pending" || status.status === "running") {
+          setJobStatus(status.status);
+        }
+
+        if (status.status === "succeeded" && status.result) {
+          // render result via streaming UX
+          const pendingId = crypto.randomUUID();
+          setPendingArtifacts(status.result.artifacts);
+          const citations = Array.isArray(status.result.citations) ? status.result.citations : [];
+          setPendingCitations(citations);
+          setStreamingState({
+            id: pendingId,
+            fullText: status.result.answer,
+            currentText: "",
+            stage: "searching",
+          });
+          setAwaitingResponse(false);
+          setPendingJobId(null);
+          setJobStatus(null);
+        } else if (status.status === "failed") {
+          toast.error(status.error || "Async job failed");
+          setStreamingState(null);
+          setAwaitingResponse(false);
+          setPendingArtifacts(null);
+          setPendingCitations([]);
+          setPendingJobId(null);
+          setJobStatus(null);
+        } else {
+          // still pending; poll again
+          pollTimer = window.setTimeout(poll, 1500);
+        }
+      } catch (err: any) {
+        if (cancelled) return;
+        toast.error(err?.message || "Failed to fetch job status");
+        setStreamingState(null);
+        setAwaitingResponse(false);
+        setPendingArtifacts(null);
+        setPendingCitations([]);
+        setPendingJobId(null);
+        setJobStatus(null);
+      }
+    };
+
+    pollTimer = window.setTimeout(poll, 1000);
+
+    return () => {
+      cancelled = true;
+      if (pollTimer) {
+        clearTimeout(pollTimer);
+      }
+    };
+  }, [pendingJobId]);
 
   useEffect(() => {
     if (!textareaRef.current) return;
@@ -240,6 +347,7 @@ export function ChatInterface() {
     // Clear pending artifacts and citations from previous query
     setPendingArtifacts(null);
     setPendingCitations([]);
+    setJobStatus(null);
 
     const conversationPayload: ChatMessagePayload[] = [...messages, userMessage].map((message) => ({
       role: message.role,
@@ -249,28 +357,47 @@ export function ChatInterface() {
     const pendingId = crypto.randomUUID();
     setStreamingState({ id: pendingId, fullText: "", currentText: "", stage: "searching" });
 
-    sendChatMessage(conversationPayload)
-      .then((response) => {
-        setPendingArtifacts(response.artifacts);
-        // Ensure citations is always an array, never undefined or null
-        const citations = Array.isArray(response.citations) ? response.citations : [];
-        setPendingCitations(citations);
-        setAwaitingResponse(false);
-        setStreamingState({
-          id: pendingId,
-          fullText: response.answer,
-          currentText: "",
-          stage: "searching",
+    const useAsync = deepSearch || isLikelyDbQuery(trimmed);
+
+    if (useAsync) {
+      sendChatMessageAsync(conversationPayload)
+        .then((resp) => {
+          setPendingJobId(resp.job_id);
+          toast.message("Running as async job for database query...");
+          setJobStatus("pending");
+        })
+        .catch((error: Error) => {
+          toast.error(error.message || "Failed to submit async job");
+          setStreamingState(null);
+          setAwaitingResponse(false);
+          setPendingArtifacts(null);
+          setPendingCitations([]);
+          setJobStatus(null);
         });
-      })
-      .catch((error: Error) => {
-        toast.error(error.message || "Failed to contact backend");
-        setStreamingState(null);
-        setAwaitingResponse(false);
-        // Clear pending state on error
-        setPendingArtifacts(null);
-        setPendingCitations([]);
-      });
+    } else {
+      sendChatMessage(conversationPayload)
+        .then((response) => {
+          setPendingArtifacts(response.artifacts);
+          // Ensure citations is always an array, never undefined or null
+          const citations = Array.isArray(response.citations) ? response.citations : [];
+          setPendingCitations(citations);
+          setAwaitingResponse(false);
+          setStreamingState({
+            id: pendingId,
+            fullText: response.answer,
+            currentText: "",
+            stage: "searching",
+          });
+        })
+        .catch((error: Error) => {
+          toast.error(error.message || "Failed to contact backend");
+          setStreamingState(null);
+          setAwaitingResponse(false);
+          // Clear pending state on error
+          setPendingArtifacts(null);
+          setPendingCitations([]);
+        });
+    }
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -609,7 +736,13 @@ export function ChatInterface() {
                 ) : (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Contacting research backend…</span>
+                    <span>
+                      {jobStatus === "running"
+                        ? "Running async job…"
+                        : jobStatus === "pending"
+                        ? "Queued async job…"
+                        : "Contacting research backend…"}
+                    </span>
                   </div>
                 )}
                 <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
@@ -738,7 +871,7 @@ export function ChatInterface() {
                   disabled={!!streamingState}
                 />
                 <Label htmlFor="deep-search" className="text-xs cursor-pointer">
-                  Deep Search
+                  Async (long queries)
                 </Label>
               </div>
             </div>
