@@ -39,6 +39,19 @@ const Auth = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [authView, setAuthView] = useState<"login" | "signup-choice" | "signup-email" | "signup-metamask">("login");
 
+  const resolveAuthRedirectUrl = () => {
+    const envRedirect = import.meta.env.VITE_AUTH_REDIRECT_URL?.trim();
+    if (envRedirect) {
+      return envRedirect.endsWith("/") ? envRedirect : `${envRedirect}/`;
+    }
+
+    const hostname = window.location.hostname;
+    if (hostname === "app.naratech.xyz") return "https://app.naratech.xyz/";
+    if (hostname === "dev-app.naratech.xyz") return "https://dev-app.naratech.xyz/";
+
+    return `${window.location.origin}/`;
+  };
+
   // Redirect if already logged in
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -153,7 +166,7 @@ const Auth = () => {
 
     setLoading(true);
     try {
-      const redirectUrl = `${window.location.origin}/`;
+      const redirectUrl = resolveAuthRedirectUrl();
       
       const { data, error } = await supabase.auth.signUp({
         email: signupEmail,
@@ -246,7 +259,7 @@ const Auth = () => {
       const message = `Sign this message to create an account with AGRH.\n\nWallet: ${walletAddress}\nTimestamp: ${Date.now()}`;
       const signature = await signMessageWithMetaMask(walletAddress, message);
 
-      const redirectUrl = `${window.location.origin}/`;
+      const redirectUrl = resolveAuthRedirectUrl();
       
       // Create account using wallet address
       const { data, error } = await supabase.auth.signUp({
