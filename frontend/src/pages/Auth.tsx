@@ -117,6 +117,8 @@ const Auth = () => {
       if (error) {
         if (error.message.includes("Invalid login credentials")) {
           toast.error("Invalid email or password. Please try again.");
+        } else if (error.message.toLowerCase().includes("email not confirmed")) {
+          toast.error("Please verify your email before logging in.");
         } else {
           toast.error(error.message);
         }
@@ -124,6 +126,11 @@ const Auth = () => {
       }
 
       if (data.user) {
+        if (!data.user.email_confirmed_at) {
+          await supabase.auth.signOut();
+          toast.error("Please verify your email before logging in.");
+          return;
+        }
         toast.success("Welcome back!");
         navigate("/");
       }
@@ -190,6 +197,11 @@ const Auth = () => {
       }
 
       if (data.user) {
+        if (!data.user.email_confirmed_at) {
+          toast.success("Account created. Please verify your email before logging in.");
+          setAuthView("login");
+          return;
+        }
         toast.success("Account created! Welcome to Animal Genetic Research Hub.");
         navigate("/");
       }
@@ -225,6 +237,11 @@ const Auth = () => {
         // If account doesn't exist, show message
         toast.error("Account not found. Please sign up first with your MetaMask wallet.");
       } else if (data.user) {
+        if (!data.user.email_confirmed_at) {
+          await supabase.auth.signOut();
+          toast.error("Please verify your email before logging in.");
+          return;
+        }
         toast.success("Successfully authenticated with MetaMask.");
         navigate("/");
       }
@@ -285,6 +302,11 @@ const Auth = () => {
       }
 
       if (data.user) {
+        if (!data.user.email_confirmed_at) {
+          toast.success("Account created. Please verify your email before logging in.");
+          setAuthView("login");
+          return;
+        }
         toast.success("Account created! Welcome to Animal Genetic Research Hub.");
         navigate("/");
       }
