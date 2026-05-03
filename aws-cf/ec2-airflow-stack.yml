@@ -35,8 +35,8 @@ Parameters:
     
   DomainName:
     Type: String
-    Description: Domain name for Airflow and Keycloak access (e.g., etl.naratech.ca)
-    Default: "etl.naratech.ca"
+    Description: Domain name for Airflow and Keycloak access (e.g., etl.naratech.xyz)
+    Default: "etl.naratech.xyz"
     
   EnableCloudFront:
     Type: String
@@ -427,13 +427,13 @@ Resources:
           - !Ref DomainName
         Origins:
           - Id: AirflowOrigin
-            DomainName: etl-backend.naratech.ca
+            DomainName: etl-backend.naratech.xyz
             CustomOriginConfig:
               HTTPPort: 8080
               HTTPSPort: 443
               OriginProtocolPolicy: http-only
           - Id: KeycloakOrigin
-            DomainName: etl-backend.naratech.ca
+            DomainName: etl-backend.naratech.xyz
             CustomOriginConfig:
               HTTPPort: 8081
               HTTPSPort: 443

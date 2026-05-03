@@ -5,7 +5,7 @@
 set -e  # Exit on error
 
 # Configuration
-DOMAIN_NAME="etl.naratech.ca"
+DOMAIN_NAME="etl.naratech.xyz"
 REGION_ACM="us-east-1"        # ACM certificates for CloudFront must be in us-east-1
 REGION_STACK="us-east-2"      # Your CloudFormation stack region
 STACK_NAME="ec2-airflow-from-scratch"
@@ -65,7 +65,7 @@ VALIDATION_VALUE=$(aws acm describe-certificate \
 
 echo -e "\n${BLUE}=== DNS Validation Required ===${NC}"
 echo -e "To validate your certificate, add the following CNAME record to your Namecheap DNS settings:"
-echo -e "${YELLOW}Important:${NC} For Namecheap DNS with subdomains like etl.naratech.ca, you need to use this format"
+echo -e "${YELLOW}Important:${NC} For Namecheap DNS with subdomains like etl.naratech.xyz, you need to use this format"
 echo -e "\n${GREEN}CNAME Record to Add:${NC}"
 # For Namecheap DNS, we need a special format for subdomains
 # Extract the validation part (like _8b20e560bb3990ec4d226872b21912ac)

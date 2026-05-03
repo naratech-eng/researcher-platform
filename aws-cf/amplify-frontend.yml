@@ -34,7 +34,7 @@ Parameters:
     Default: "true"
   DomainName:
     Type: String
-    Default: naratech.ca
+    Default: naratech.xyz
   ProdSubdomainPrefix:
     Type: String
     Default: app

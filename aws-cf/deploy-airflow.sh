@@ -10,7 +10,7 @@ TEMPLATE_FILE="ec2-airflow-stack.yml"
 REGION="us-east-2"
 EFS_TAG_KEY="AirflowCluster"
 EFS_TAG_VALUE=$STACK_NAME
-DOMAIN_NAME="etl.naratech.ca"
+DOMAIN_NAME="etl.naratech.xyz"
 
 # --- Parse Arguments ---
 ENABLE_CLOUDFRONT="false"
