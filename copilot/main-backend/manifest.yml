@@ -17,7 +17,7 @@ image:
 
 http:
   path: '/'
-  alias: 'main-api.naratech.ca'
+  alias: 'main-api.naratech.xyz'
   healthcheck:
     path: '/health'
     healthy_threshold: 2
@@ -45,7 +45,7 @@ variables:
   MAIN_BACKEND_USE_LLM_IN_CHAT: true
   MAIN_BACKEND_USE_LANGCHAIN_SUMMARIZER: true
   MAIN_BACKEND_USE_CHARTS: true
-  MAIN_BACKEND_CORS_ORIGINS: "http://localhost:5173,https://app.naratech.ca,https://dev-app.naratech.ca"
+  MAIN_BACKEND_CORS_ORIGINS: "http://localhost:5173,https://app.naratech.xyz,https://dev-app.naratech.xyz"
   OPENAI_MODEL: gpt-5.1
 
 

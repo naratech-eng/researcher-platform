@@ -19,7 +19,7 @@ aws lambda update-function-configuration \
     --function-name "$LAMBDA_FUNCTION_NAME" \
     --region us-east-2 \
     --environment "Variables={
-        DOMAIN=naratech.ca,
+        DOMAIN=naratech.xyz,
         HOST=etl,
         ALLOCATION_ID=eipalloc-02c30f687a2568c79,
         ASG_NAME=ec2-airflow-from-scratch-AutoScalingGroup-bfMwaNahnIB1,

@@ -10,7 +10,7 @@ image:
 
 http:
   path: '/'
-  alias: 'user-api.naratech.ca'
+  alias: 'user-api.naratech.xyz'
   healthcheck:
     path: '/health'
     healthy_threshold: 2
@@ -30,7 +30,7 @@ variables:
   DB_NAME: animal_genetics
   AWS_REGION: us-east-2
   PORT: 3000
-  CORS_ALLOWED_ORIGINS: "https://dev-app.naratech.ca,https://app.naratech.ca"
+  CORS_ALLOWED_ORIGINS: "https://dev-app.naratech.xyz,https://app.naratech.xyz"
   DOCUMENTDB_TLS: "true"
   DOCUMENTDB_CA_FILE: /etc/ssl/certs/rds-global-bundle.pem
   DOCUMENTDB_PORT: 27017

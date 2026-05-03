@@ -5,7 +5,7 @@
 DDNS_PASSWORD=99682caa687a480a9f3125a4f6b89d25
 
 # Your domain name
-DOMAIN=naratech.ca
+DOMAIN=naratech.xyz
 
 # Subdomain/host (use @ for root domain, or specify subdomain like 'etl')
 HOST=etl
