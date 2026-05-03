@@ -22,8 +22,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - name: Show Supabase CLI version
+        run: npx -y supabase@latest --version
 
       - name: Validate required secrets
         run: |
@@ -31,10 +36,10 @@ jobs:
           test -n "$SUPABASE_DB_PASSWORD" || (echo "Missing secret: SUPABASE_DB_PASSWORD" && exit 1)
 
       - name: Link project
-        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
+        run: npx -y supabase@latest link --project-ref "$SUPABASE_PROJECT_REF"
 
       - name: Preview migrations (dry run)
-        run: supabase db push --dry-run
+        run: npx -y supabase@latest db push --dry-run
 
       - name: Push migrations
-        run: supabase db push
+        run: npx -y supabase@latest db push
