@@ -198,4 +198,20 @@ The platform implements a **Hybrid Sync/Async API Architecture** to manage high-
 
 *(GIF of Emilia AI usage will be placed here)*
 
+## TEMP implmentation user data backend
+
+- User data backend migrations are currently managed with Supabase CLI from `frontend/supabase/migrations/`.
+- GitHub Actions workflow: `.github/workflows/supabase-db-push.yml`.
+- Trigger behavior:
+  - Runs automatically on `push` to `dev` only when files under `frontend/supabase/migrations/**` change.
+  - Can also run manually via `workflow_dispatch`.
+- Required GitHub repository secrets:
+  - `SUPABASE_ACCESS_TOKEN`
+  - `SUPABASE_DB_PASSWORD`
+- Fixed Supabase project ref used by CI: `gvytapsyqmwbabixwnmq`.
+- Local manual run (optional):
+  - `cd frontend`
+  - `SUPABASE_DB_PASSWORD='<db-password>' supabase link --project-ref gvytapsyqmwbabixwnmq`
+  - `SUPABASE_DB_PASSWORD='<db-password>' supabase db push`
+
 ---

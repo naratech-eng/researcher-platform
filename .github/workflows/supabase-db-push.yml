@@ -1,0 +1,40 @@
+name: Supabase DB Push
+
+on:
+  push:
+    branches:
+      - dev
+    paths:
+      - frontend/supabase/migrations/**
+  workflow_dispatch:
+
+jobs:
+  db-push:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: gvytapsyqmwbabixwnmq
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+
+      - name: Validate required secrets
+        run: |
+          test -n "$SUPABASE_ACCESS_TOKEN" || (echo "Missing secret: SUPABASE_ACCESS_TOKEN" && exit 1)
+          test -n "$SUPABASE_DB_PASSWORD" || (echo "Missing secret: SUPABASE_DB_PASSWORD" && exit 1)
+
+      - name: Link project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
+
+      - name: Preview migrations (dry run)
+        run: supabase db push --dry-run
+
+      - name: Push migrations
+        run: supabase db push
