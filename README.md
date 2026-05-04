@@ -20,6 +20,9 @@
 -   **Production**: [https://app.naratech.xyz](https://app.naratech.xyz)
 -   **Development**: [https://dev-app.naratech.xyz](https://dev-app.naratech.xyz)
 
+**Documentation**
+-   [Developer & Architecture Docs (GitBook)](https://naratech-platforms.gitbook.io/animal-research-hub)
+
 ## Introduction
 
 The **Animal Genetics Research Platform** is a transformative cloud ecosystem designed to bridge the critical gap between advanced genomic science and practical livestock management. Our mission is to democratize access to cutting-edge genetic research, empowering farmers and researchers to collaborate in accelerating genetic gain, enhancing animal welfare, and driving sustainable agricultural production.
