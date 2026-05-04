@@ -16,6 +16,10 @@
   <img src="https://custom-icon-badges.demolab.com/badge/ChromaDB-008CC1?style=for-the-badge&logo=chromadb&logoColor=white" alt="ChromaDB">
 </div>
 
+**Live Demos**
+-   **Production**: [https://app.naratech.xyz](https://app.naratech.xyz)
+-   **Development**: [https://dev-app.naratech.xyz](https://dev-app.naratech.xyz)
+
 ## Introduction
 
 The **Animal Genetics Research Platform** is a transformative cloud ecosystem designed to bridge the critical gap between advanced genomic science and practical livestock management. Our mission is to democratize access to cutting-edge genetic research, empowering farmers and researchers to collaborate in accelerating genetic gain, enhancing animal welfare, and driving sustainable agricultural production.
